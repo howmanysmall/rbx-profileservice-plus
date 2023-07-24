@@ -1,6 +1,6 @@
 {
   "name": "@rbxts/rbx-profileservice-plus",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "main": "out/init.lua",
   "scripts": {
@@ -34,7 +34,6 @@
   },
   "dependencies": {
     "@rbxts/janitor": "^1.15.4-ts.0",
-    "@rbxts/rbx-better-signal": "^1.0.0",
-    "@rbxts/rbxts-sleitnick-log": "^1.0.1"
+    "@rbxts/rbx-better-signal": "^1.0.0"
   }
 }

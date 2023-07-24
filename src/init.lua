@@ -200,14 +200,12 @@
 
 --]]
 
--- local TS = _G[script]
 local DataStoreService = game:GetService("DataStoreService") -- TS.import(script, game:GetService("ServerScriptService"), "TS", "modules", "vendor", "data-store-service")
 local RunService = game:GetService("RunService")
 
 local TS = _G[script]
 local Janitor = TS.import(script, TS.getModule(script, "@rbxts", "janitor").src).Janitor
 local Signal = TS.import(script, TS.getModule(script, "@rbxts", "rbx-better-signal").out)
-local Log = TS.import(script, TS.getModule(script, "@rbxts", "rbxts-sleitnick-log").out).default
 
 local Promise = TS.Promise
 
@@ -233,11 +231,6 @@ local SETTINGS = {
 		LastUpdate = true;
 	};
 }
-
-local Logger = Log.new()
-local Error = Logger.FatalThrow
-local Print = Logger.Info
-local Warn = Logger.Warning
 
 local Madwork -- Standalone Madwork reference for portable version of ProfileService
 
@@ -449,7 +442,7 @@ local function ProfileFunction(FunctionName: string, Function, ...)
 		end)
 
 		if not Success then
-			Warn(`Failed to fire ProfileResult signal - {Error}`)
+			warn(`[ProfileServicePlus] Failed to fire ProfileResult signal - {Error}`)
 		end
 	end
 
@@ -473,7 +466,7 @@ local function ProfileFunctionFenv(FunctionName: string, Function)
 			end)
 
 			if not Success then
-				Warn(`Failed to fire ProfileResult signal - {Error}`)
+				warn(`[ProfileServicePlus] Failed to fire ProfileResult signal - {Error}`)
 			end
 		end
 
@@ -566,7 +559,7 @@ local CustomWriteQueue = {
 
 local function DeepCopyTable(t)
 	local copy = {}
-	for key, value in t do
+	for key, value in next, t do
 		if type(value) == "table" then
 			copy[key] = DeepCopyTable(value)
 		else
@@ -578,7 +571,7 @@ local function DeepCopyTable(t)
 end
 
 local function ReconcileTable(target, template)
-	for k, v in template do
+	for k, v in next, template do
 		if type(k) == "string" then -- Only string keys will be reconciled
 			if target[k] == nil then
 				if type(v) == "table" then
@@ -707,8 +700,8 @@ end)
 local RegisterIssue = ProfileFunctionFenv(
 	"RegisterIssue",
 	function(error_message, store_name, store_scope, profile_key) -- Called when a DataStore API call errors
-		Warn(
-			"DataStore API error "
+		warn(
+			"[ProfileServicePlus] DataStore API error "
 				.. IdentifyProfile(store_name, store_scope, profile_key)
 				.. ' - "'
 				.. tostring(error_message)
@@ -723,7 +716,10 @@ local RegisterIssue = ProfileFunctionFenv(
 local RegisterCorruption = ProfileFunctionFenv(
 	"RegisterCorruption",
 	function(store_name, store_scope, profile_key) -- Called when a corrupted profile is loaded
-		Warn("Resolved profile corruption " .. IdentifyProfile(store_name, store_scope, profile_key))
+		warn(
+			"[ProfileServicePlus] Resolved profile corruption " .. IdentifyProfile(store_name, store_scope, profile_key)
+		)
+
 		ProfileService.CorruptionSignal:Fire(store_name, profile_key)
 	end
 )
@@ -922,7 +918,10 @@ local StandardProfileUpdateAsyncDataStore = ProfileFunctionFenv(
 									and type(error_message2) == "string"
 									and string.find(error_message2, "not valid") ~= nil
 								then
-									Warn("Passed version argument is not valid; Traceback:\n" .. debug.traceback())
+									warn(
+										"[ProfileServicePlus] Passed version argument is not valid; Traceback:\n"
+											.. debug.traceback()
+									)
 								end
 							else
 								get_data, get_key_info = ProfileFunction("GetAsync", function()
@@ -1107,7 +1106,7 @@ local SaveProfileAsync = ProfileFunctionFenv("SaveProfileAsync", function(profil
 			profile._profile_key
 		)
 
-		Error("PROFILE DATA CORRUPTED DURING RUNTIME! Profile: " .. profile:Identify())
+		error("[ProfileServicePlus] PROFILE DATA CORRUPTED DURING RUNTIME! Profile: " .. profile:Identify())
 	end
 
 	if release_from_session == true and is_overwriting ~= true then
@@ -1336,14 +1335,14 @@ end
 -- ONLY WHEN FROM "Profile.GlobalUpdates":
 function GlobalUpdates:ListenToNewActiveUpdate(listener) --> [ScriptConnection] listener(update_id, update_data)
 	if type(listener) ~= "function" then
-		Error("Only a function can be set as listener in GlobalUpdates:ListenToNewActiveUpdate()")
+		error("[ProfileServicePlus] Only a function can be set as listener in GlobalUpdates:ListenToNewActiveUpdate()")
 	end
 
 	local profile = self._profile
 	if self._update_handler_mode == true then
-		Error("Can't listen to new global updates in ProfileStore:GlobalUpdateProfileAsync()")
+		error("[ProfileServicePlus] Can't listen to new global updates in ProfileStore:GlobalUpdateProfileAsync()")
 	elseif self._new_active_update_listeners == nil then
-		Error("Can't listen to new global updates in view mode")
+		error("[ProfileServicePlus] Can't listen to new global updates in view mode")
 	elseif profile:IsActive() == false then -- Check if profile is expired
 		return { -- Do not connect listener if the profile is expired
 			Disconnect = function() end;
@@ -1356,14 +1355,14 @@ end
 
 function GlobalUpdates:ListenToNewLockedUpdate(listener) --> [ScriptConnection] listener(update_id, update_data)
 	if type(listener) ~= "function" then
-		Error("Only a function can be set as listener in GlobalUpdates:ListenToNewLockedUpdate()")
+		error("[ProfileServicePlus] Only a function can be set as listener in GlobalUpdates:ListenToNewLockedUpdate()")
 	end
 
 	local profile = self._profile
 	if self._update_handler_mode == true then
-		Error("Can't listen to new global updates in ProfileStore:GlobalUpdateProfileAsync()")
+		error("[ProfileServicePlus] Can't listen to new global updates in ProfileStore:GlobalUpdateProfileAsync()")
 	elseif self._new_locked_update_listeners == nil then
-		Error("Can't listen to new global updates in view mode")
+		error("[ProfileServicePlus] Can't listen to new global updates in view mode")
 	elseif profile:IsActive() == false then -- Check if profile is expired
 		return { -- Do not connect listener if the profile is expired
 			Disconnect = function() end;
@@ -1376,16 +1375,16 @@ end
 
 function GlobalUpdates:LockActiveUpdate(update_id)
 	if type(update_id) ~= "number" then
-		Error("Invalid update_id")
+		error("[ProfileServicePlus] Invalid update_id")
 	end
 
 	local profile = self._profile
 	if self._update_handler_mode == true then
-		Error("Can't lock active global updates in ProfileStore:GlobalUpdateProfileAsync()")
+		error("[ProfileServicePlus] Can't lock active global updates in ProfileStore:GlobalUpdateProfileAsync()")
 	elseif self._pending_update_lock == nil then
-		Error("Can't lock active global updates in view mode")
+		error("[ProfileServicePlus] Can't lock active global updates in view mode")
 	elseif profile:IsActive() == false then -- Check if profile is expired
-		Error("PROFILE EXPIRED - Can't lock active global updates")
+		error("[ProfileServicePlus] PROFILE EXPIRED - Can't lock active global updates")
 	end
 
 	-- Check if global update exists with given update_id
@@ -1410,22 +1409,22 @@ function GlobalUpdates:LockActiveUpdate(update_id)
 			table.insert(self._pending_update_lock, update_id)
 		end
 	else
-		Error("Passed non-existent update_id")
+		error("[ProfileServicePlus] Passed non-existent update_id")
 	end
 end
 
 function GlobalUpdates:ClearLockedUpdate(update_id)
 	if type(update_id) ~= "number" then
-		Error("Invalid update_id")
+		error("[ProfileServicePlus] Invalid update_id")
 	end
 
 	local profile = self._profile
 	if self._update_handler_mode == true then
-		Error("Can't clear locked global updates in ProfileStore:GlobalUpdateProfileAsync()")
+		error("[ProfileServicePlus] Can't clear locked global updates in ProfileStore:GlobalUpdateProfileAsync()")
 	elseif self._pending_update_clear == nil then
-		Error("Can't clear locked global updates in view mode")
+		error("[ProfileServicePlus] Can't clear locked global updates in view mode")
 	elseif profile:IsActive() == false then -- Check if profile is expired
-		Error("PROFILE EXPIRED - Can't clear locked global updates")
+		error("[ProfileServicePlus] PROFILE EXPIRED - Can't clear locked global updates")
 	end
 
 	-- Check if global update exists with given update_id
@@ -1450,20 +1449,24 @@ function GlobalUpdates:ClearLockedUpdate(update_id)
 			table.insert(self._pending_update_clear, update_id)
 		end
 	else
-		Error("Passed non-existent update_id")
+		error("[ProfileServicePlus] Passed non-existent update_id")
 	end
 end
 
 -- EXPOSED TO "update_handler" DURING ProfileStore:GlobalUpdateProfileAsync() CALL
 function GlobalUpdates:AddActiveUpdate(update_data)
 	if type(update_data) ~= "table" then
-		Error("Invalid update_data")
+		error("[ProfileServicePlus] Invalid update_data")
 	end
 
 	if self._new_active_update_listeners ~= nil then
-		Error("Can't add active global updates in loaded Profile; Use ProfileStore:GlobalUpdateProfileAsync()")
+		error(
+			"[ProfileServicePlus] Can't add active global updates in loaded Profile; Use ProfileStore:GlobalUpdateProfileAsync()"
+		)
 	elseif self._update_handler_mode ~= true then
-		Error("Can't add active global updates in view mode; Use ProfileStore:GlobalUpdateProfileAsync()")
+		error(
+			"[ProfileServicePlus] Can't add active global updates in view mode; Use ProfileStore:GlobalUpdateProfileAsync()"
+		)
 	end
 
 	-- self._updates_latest = {}, -- [table] {update_index, {{update_id, version_id, update_locked, update_data}, ...}}
@@ -1476,17 +1479,21 @@ end
 
 function GlobalUpdates:ChangeActiveUpdate(update_id, update_data)
 	if type(update_id) ~= "number" then
-		Error("Invalid update_id")
+		error("[ProfileServicePlus] Invalid update_id")
 	end
 
 	if type(update_data) ~= "table" then
-		Error("Invalid update_data")
+		error("[ProfileServicePlus] Invalid update_data")
 	end
 
 	if self._new_active_update_listeners ~= nil then
-		Error("Can't change active global updates in loaded Profile; Use ProfileStore:GlobalUpdateProfileAsync()")
+		error(
+			"[ProfileServicePlus] Can't change active global updates in loaded Profile; Use ProfileStore:GlobalUpdateProfileAsync()"
+		)
 	elseif self._update_handler_mode ~= true then
-		Error("Can't change active global updates in view mode; Use ProfileStore:GlobalUpdateProfileAsync()")
+		error(
+			"[ProfileServicePlus] Can't change active global updates in view mode; Use ProfileStore:GlobalUpdateProfileAsync()"
+		)
 	end
 
 	-- self._updates_latest = {}, -- [table] {update_index, {{update_id, version_id, update_locked, update_data}, ...}}
@@ -1501,25 +1508,29 @@ function GlobalUpdates:ChangeActiveUpdate(update_id, update_data)
 
 	if get_global_update ~= nil then
 		if get_global_update[3] == true then
-			Error("Can't change locked global update")
+			error("[ProfileServicePlus] Can't change locked global update")
 		end
 
 		get_global_update[2] += 1 -- Increment version id
 		get_global_update[4] = update_data -- Set new global update data
 	else
-		Error("Passed non-existent update_id")
+		error("[ProfileServicePlus] Passed non-existent update_id")
 	end
 end
 
 function GlobalUpdates:ClearActiveUpdate(update_id)
 	if type(update_id) ~= "number" then
-		Error("Invalid update_id argument")
+		error("[ProfileServicePlus] Invalid update_id argument")
 	end
 
 	if self._new_active_update_listeners ~= nil then
-		Error("Can't clear active global updates in loaded Profile; Use ProfileStore:GlobalUpdateProfileAsync()")
+		error(
+			"[ProfileServicePlus] Can't clear active global updates in loaded Profile; Use ProfileStore:GlobalUpdateProfileAsync()"
+		)
 	elseif self._update_handler_mode ~= true then
-		Error("Can't clear active global updates in view mode; Use ProfileStore:GlobalUpdateProfileAsync()")
+		error(
+			"[ProfileServicePlus] Can't clear active global updates in view mode; Use ProfileStore:GlobalUpdateProfileAsync()"
+		)
 	end
 
 	-- self._updates_latest = {}, -- [table] {update_index, {{update_id, version_id, update_locked, update_data}, ...}}
@@ -1536,12 +1547,12 @@ function GlobalUpdates:ClearActiveUpdate(update_id)
 
 	if get_global_update ~= nil then
 		if get_global_update[3] == true then
-			Error("Can't clear locked global update")
+			error("[ProfileServicePlus] Can't clear locked global update")
 		end
 
 		table.remove(updates_latest[2], get_global_update_index) -- Remove active global update
 	else
-		Error("Passed non-existent update_id")
+		error("[ProfileServicePlus] Passed non-existent update_id")
 	end
 end
 
@@ -1591,9 +1602,9 @@ end
 
 function Profile:SetMetatag(tag_name, value)
 	if type(tag_name) ~= "string" then
-		Error("tag_name must be a string")
+		error("[ProfileServicePlus] tag_name must be a string")
 	elseif #tag_name == 0 then
-		Error("Invalid tag_name")
+		error("[ProfileServicePlus] Invalid tag_name")
 	end
 
 	self.Metadata.Metatags[tag_name] = value
@@ -1606,7 +1617,7 @@ end
 
 function Profile:StoreOnValueChange(Name: string, ValueBase)
 	if self._used_keys[Name] then
-		Error(string.format("Already have a writer for %q", Name))
+		error(string.format("[ProfileServicePlus] Already have a writer for %q", Name))
 	end
 
 	self._used_keys[Name] = true
@@ -1617,7 +1628,7 @@ end
 
 function Profile:StoreOnAttributeChange(Name: string, Object: Instance)
 	if self._used_keys[Name] then
-		Error(string.format("Already have a writer for %q", Name))
+		error(string.format("[ProfileServicePlus] Already have a writer for %q", Name))
 	end
 
 	self._used_keys[Name] = true
@@ -1629,12 +1640,12 @@ end
 function Profile:StoreToTableOnValueChange(Name: string, TableName: string, ValueBase)
 	local NewName = TableName .. "." .. Name
 	if self._used_keys[NewName] then
-		Error(string.format("Already have a writer for %q", NewName))
+		error(string.format("[ProfileServicePlus] Already have a writer for %q", NewName))
 	end
 
 	local DataTable = self.Data[TableName]
 	if not DataTable or type(DataTable) ~= "table" then
-		Error(string.format("There is no table with the name %q in Data", TableName))
+		error(string.format("[ProfileServicePlus] There is no table with the name %q in Data", TableName))
 	end
 
 	self._used_keys[NewName] = true
@@ -1646,12 +1657,12 @@ end
 function Profile:StoreToTableOnAttributeChange(Name: string, TableName: string, Object: Instance)
 	local NewName = TableName .. "." .. Name
 	if self._used_keys[NewName] then
-		Error(string.format("Already have a writer for %q", NewName))
+		error(string.format("[ProfileServicePlus] Already have a writer for %q", NewName))
 	end
 
 	local DataTable = self.Data[TableName]
 	if not DataTable or type(DataTable) ~= "table" then
-		Error(string.format("There is no table with the name %q in Data", TableName))
+		error(string.format("[ProfileServicePlus] There is no table with the name %q in Data", TableName))
 	end
 
 	self._used_keys[NewName] = true
@@ -1666,21 +1677,21 @@ function Profile:StoreToPathOnValueChange(Path: string | {string}, ValueBase)
 	local Name = table.remove(PathArray)
 
 	if self._used_keys[NewName] then
-		Error(string.format("Already have a writer for %q", NewName))
+		error(string.format("[ProfileServicePlus] Already have a writer for %q", NewName))
 	end
 
 	local DataTable = self.Data
 	for _, PathValue in PathArray do
 		local NewDataTable = DataTable[PathValue]
 		if not NewDataTable or type(NewDataTable) ~= "table" then
-			Error(string.format("There is no table with the path %q", NewName))
+			error(string.format("[ProfileServicePlus] There is no table with the path %q", NewName))
 		end
 
 		DataTable = NewDataTable
 	end
 
 	if not DataTable or type(DataTable) ~= "table" then
-		Error(string.format("There is no table with the path %q", NewName))
+		error(string.format("[ProfileServicePlus] There is no table with the path %q", NewName))
 	end
 
 	self._used_keys[NewName] = true
@@ -1695,21 +1706,21 @@ function Profile:StoreToPathOnAttributeChange(Path: string | {string}, Object: I
 	local Name = table.remove(PathArray)
 
 	if self._used_keys[NewName] then
-		Error(string.format("Already have a writer for %q", NewName))
+		error(string.format("[ProfileServicePlus] Already have a writer for %q", NewName))
 	end
 
 	local DataTable = self.Data
 	for _, PathValue in PathArray do
 		local NewDataTable = DataTable[PathValue]
 		if not NewDataTable or type(NewDataTable) ~= "table" then
-			Error(string.format("There is no table with the path %q", NewName))
+			error(string.format("[ProfileServicePlus] There is no table with the path %q", NewName))
 		end
 
 		DataTable = NewDataTable
 	end
 
 	if not DataTable or type(DataTable) ~= "table" then
-		Error(string.format("There is no table with the path %q", NewName))
+		error(string.format("[ProfileServicePlus] There is no table with the path %q", NewName))
 	end
 
 	self._used_keys[NewName] = true
@@ -1736,14 +1747,14 @@ function Profile:SetToPath(Path: string | {string}, Value: any)
 	for _, PathValue in PathArray do
 		local NewDataTable = DataTable[PathValue]
 		if not NewDataTable or type(NewDataTable) ~= "table" then
-			Error(string.format("There is no table with the path %q", NewName))
+			error(string.format("[ProfileServicePlus] There is no table with the path %q", NewName))
 		end
 
 		DataTable = NewDataTable
 	end
 
 	if not DataTable or type(DataTable) ~= "table" then
-		Error(string.format("There is no table with the path %q", NewName))
+		error(string.format("[ProfileServicePlus] There is no table with the path %q", NewName))
 	end
 
 	DataTable[Key] = Value
@@ -1759,14 +1770,14 @@ function Profile:RawSetToPath(Path: string | {string}, Value: any)
 	for _, PathValue in PathArray do
 		local NewDataTable = DataTable[PathValue]
 		if not NewDataTable or type(NewDataTable) ~= "table" then
-			Error(string.format("There is no table with the path %q", NewName))
+			error(string.format("[ProfileServicePlus] There is no table with the path %q", NewName))
 		end
 
 		DataTable = NewDataTable
 	end
 
 	if not DataTable or type(DataTable) ~= "table" then
-		Error(string.format("There is no table with the path %q", NewName))
+		error(string.format("[ProfileServicePlus] There is no table with the path %q", NewName))
 	end
 
 	DataTable[Key] = Value
@@ -1774,7 +1785,7 @@ end
 
 function Profile:ListenToRelease(listener) --> [ScriptConnection] (place_id / nil, game_job_id / nil)
 	if type(listener) ~= "function" then
-		Error("Only a function can be set as listener in Profile:ListenToRelease()")
+		error("[ProfileServicePlus] Only a function can be set as listener in Profile:ListenToRelease()")
 	end
 
 	if self._view_mode == true then
@@ -1800,11 +1811,17 @@ end
 
 Profile.Save = ProfileFunctionFenv("Profile.Save", function(self)
 	if self._view_mode == true then
-		Error("Can't save Profile in view mode - Should you be calling :OverwriteAsync() instead?")
+		error("[ProfileServicePlus] Can't save Profile in view mode - Should you be calling :OverwriteAsync() instead?")
 	end
 
 	if self:IsActive() == false then
-		Warn("Attempted saving an inactive profile " .. self:Identify() .. "; Traceback:\n" .. debug.traceback())
+		warn(
+			"[ProfileServicePlus] Attempted saving an inactive profile "
+				.. self:Identify()
+				.. "; Traceback:\n"
+				.. debug.traceback()
+		)
+
 		return
 	end
 
@@ -1825,7 +1842,13 @@ function Profile:SaveAsync()
 	end
 
 	if self:IsActive() == false then
-		Warn("Attempted saving an inactive profile " .. self:Identify() .. "; Traceback:\n" .. debug.traceback())
+		warn(
+			"[ProfileServicePlus] Attempted saving an inactive profile "
+				.. self:Identify()
+				.. "; Traceback:\n"
+				.. debug.traceback()
+		)
+
 		return Promise.reject("Attempted a save of an inactive profile.")
 	end
 
@@ -1858,7 +1881,7 @@ end
 
 function Profile:ListenToHopReady(listener) --> [ScriptConnection] ()
 	if type(listener) ~= "function" then
-		Error("Only a function can be set as listener in Profile:ListenToHopReady()")
+		error("[ProfileServicePlus] Only a function can be set as listener in Profile:ListenToHopReady()")
 	end
 
 	if self._view_mode == true then
@@ -1875,8 +1898,11 @@ end
 
 function Profile:AddUserId(user_id: number) -- Associates user_id with profile (GDPR compliance)
 	if type(user_id) ~= "number" or user_id % 1 ~= 0 then
-		Warn(
-			"Invalid UserId argument for :AddUserId() (" .. tostring(user_id) .. "); Traceback:\n" .. debug.traceback()
+		warn(
+			"[ProfileServicePlus] Invalid UserId argument for :AddUserId() ("
+				.. tostring(user_id)
+				.. "); Traceback:\n"
+				.. debug.traceback()
 		)
 
 		return
@@ -1893,8 +1919,8 @@ end
 
 function Profile:RemoveUserId(user_id: number) -- Unassociates user_id with profile (safe function)
 	if type(user_id) ~= "number" or user_id % 1 ~= 0 then
-		Warn(
-			"Invalid UserId argument for :RemoveUserId() ("
+		warn(
+			"[ProfileServicePlus] Invalid UserId argument for :RemoveUserId() ("
 				.. tostring(user_id)
 				.. "); Traceback:\n"
 				.. debug.traceback()
@@ -1920,7 +1946,7 @@ end
 
 function Profile:ClearGlobalUpdates() -- Clears all global updates data from a profile payload
 	if self._view_mode ~= true then
-		Error(":ClearGlobalUpdates() can only be used in view mode")
+		error("[ProfileServicePlus] :ClearGlobalUpdates() can only be used in view mode")
 	end
 
 	self.GlobalUpdates = setmetatable({
@@ -1931,7 +1957,7 @@ end
 
 function Profile:Overwrite() -- Saves the profile to the DataStore and removes the session lock
 	if self._view_mode ~= true then
-		Error(":OverwriteAsync() can only be used in view mode")
+		error("[ProfileServicePlus] :OverwriteAsync() can only be used in view mode")
 	end
 
 	SaveProfileAsync(self, nil, true)
@@ -2014,7 +2040,7 @@ function ProfileVersionQuery:Next(_is_stacking) --> [Profile] or nil
 			end)
 
 			if list_success == false or self._query_pages == nil then
-				Warn("Version query fail - " .. tostring(error_message))
+				warn("[ProfileServicePlus] Version query fail - " .. tostring(error_message))
 				self._query_failure = true
 			end
 
@@ -2126,13 +2152,15 @@ ProfileStore.LoadProfile = ProfileFunctionFenv(
 		local not_released_handler = notReleasedHandler or "ForceLoad"
 
 		if self._profile_template == nil then
-			Error("Profile template not set - ProfileStore:LoadProfileAsync() locked for this ProfileStore")
+			error(
+				"[ProfileServicePlus] Profile template not set - ProfileStore:LoadProfileAsync() locked for this ProfileStore"
+			)
 		end
 
 		if type(profile_key) ~= "string" then
-			Error("profile_key must be a string")
+			error("[ProfileServicePlus] profile_key must be a string")
 		elseif #profile_key == 0 then
-			Error("Invalid profile_key")
+			error("[ProfileServicePlus] Invalid profile_key")
 		end
 
 		if
@@ -2140,7 +2168,7 @@ ProfileStore.LoadProfile = ProfileFunctionFenv(
 			and not_released_handler ~= "ForceLoad"
 			and not_released_handler ~= "Steal"
 		then
-			Error("Invalid not_released_handler")
+			error("[ProfileServicePlus] Invalid not_released_handler")
 		end
 
 		if ProfileService.ServiceLocked == true then
@@ -2158,8 +2186,8 @@ ProfileStore.LoadProfile = ProfileFunctionFenv(
 					or profile_store._loaded_profiles
 
 				if loaded_profiles[profile_key] ~= nil then
-					Error(
-						"Profile "
+					error(
+						"[ProfileServicePlus] Profile "
 							.. IdentifyProfile(self._profile_store_name, self._profile_store_scope, profile_key)
 							.. " is already loaded in this session"
 					)
@@ -2372,10 +2400,13 @@ ProfileStore.LoadProfile = ProfileFunctionFenv(
 							task.wait() -- Overload prevention
 						else
 							-- local handler_result = assert(Enums.ReleaseHandler.Cast(not_released_handler(active_session[1], active_session[2])))
-							local handler_result = assert(
-								not_released_handler(active_session[1], active_session[2]),
-								"Couldn't get HandlerResult!"
+							assert(
+								type(not_released_handler) == "function",
+								"[ProfileServicePlus] Can't use ReleaseHandlerEnum in ProfileStore:LoadProfileAsync()"
 							)
+
+							local handler_result = not_released_handler(active_session[1], active_session[2])
+							assert(handler_result, "[ProfileServicePlus] Couldn't get HandlerResult!")
 
 							if handler_result == "Repeat" then
 								task.wait() -- Overload prevention
@@ -2392,8 +2423,8 @@ ProfileStore.LoadProfile = ProfileFunctionFenv(
 
 								task.wait() -- Overload prevention
 							else
-								Error(
-									'Invalid return from not_released_handler ("'
+								error(
+									'[ProfileServicePlus] Invalid return from not_released_handler ("'
 										.. tostring(handler_result)
 										.. '")('
 										.. type(handler_result)
@@ -2426,11 +2457,11 @@ ProfileStore.LoadProfile = ProfileFunctionFenv(
 
 function ProfileStore:GlobalUpdateProfile(profile_key, update_handler, _use_mock) --> [GlobalUpdates / nil] (update_handler(GlobalUpdates))
 	if type(profile_key) ~= "string" or #profile_key == 0 then
-		Error("Invalid profile_key")
+		error("[ProfileServicePlus] Invalid profile_key")
 	end
 
 	if type(update_handler) ~= "function" then
-		Error("Invalid update_handler")
+		error("[ProfileServicePlus] Invalid update_handler")
 	end
 
 	if ProfileService.ServiceLocked == true then
@@ -2469,7 +2500,7 @@ end
 
 function ProfileStore:ViewProfile(profile_key, version, _use_mock) --> [Profile / nil]
 	if type(profile_key) ~= "string" or #profile_key == 0 then
-		Error("Invalid profile_key")
+		error("[ProfileServicePlus] Invalid profile_key")
 	end
 
 	if ProfileService.ServiceLocked == true then
@@ -2550,7 +2581,7 @@ end
 
 function ProfileStore:ProfileVersionQuery(profile_key, sort_direction, min_date, max_date, _use_mock) --> [ProfileVersionQuery]
 	if type(profile_key) ~= "string" or #profile_key == 0 then
-		Error("Invalid profile_key")
+		error("[ProfileServicePlus] Invalid profile_key")
 	end
 
 	if ProfileService.ServiceLocked == true then
@@ -2559,7 +2590,7 @@ function ProfileStore:ProfileVersionQuery(profile_key, sort_direction, min_date,
 
 	WaitForPendingProfileStore(self)
 	if _use_mock == UseMockTag or UseMockDataStore == true then
-		Error(":ProfileVersionQuery() is not supported in mock mode")
+		error("[ProfileServicePlus] :ProfileVersionQuery() is not supported in mock mode")
 	end
 
 	-- Type check:
@@ -2567,15 +2598,15 @@ function ProfileStore:ProfileVersionQuery(profile_key, sort_direction, min_date,
 		sort_direction ~= nil
 		and (typeof(sort_direction) ~= "EnumItem" or sort_direction.EnumType ~= Enum.SortDirection)
 	then
-		Error("Invalid sort_direction (" .. tostring(sort_direction) .. ")")
+		error("[ProfileServicePlus] Invalid sort_direction (" .. tostring(sort_direction) .. ")")
 	end
 
 	if min_date ~= nil and typeof(min_date) ~= "DateTime" and type(min_date) ~= "number" then
-		Error("Invalid min_date (" .. tostring(min_date) .. ")")
+		error("[ProfileServicePlus] Invalid min_date (" .. tostring(min_date) .. ")")
 	end
 
 	if max_date ~= nil and typeof(max_date) ~= "DateTime" and type(max_date) ~= "number" then
-		Error("Invalid max_date (" .. tostring(max_date) .. ")")
+		error("[ProfileServicePlus] Invalid max_date (" .. tostring(max_date) .. ")")
 	end
 
 	min_date = typeof(min_date) == "DateTime" and min_date.UnixTimestampMillis or min_date
@@ -2599,7 +2630,7 @@ end
 
 function ProfileStore:WipeProfile(profile_key, _use_mock) --> is_wipe_successful [bool]
 	if type(profile_key) ~= "string" or #profile_key == 0 then
-		Error("Invalid profile_key")
+		error("[ProfileServicePlus] Invalid profile_key")
 	end
 
 	if ProfileService.ServiceLocked == true then
@@ -2663,22 +2694,22 @@ function ProfileService.GetProfileStore<T>(profile_store_index: ProfileStoreInde
 		profile_store_name = profile_store_index.Name
 		profile_store_scope = profile_store_index.Scope
 	else
-		Error("Invalid or missing profile_store_index")
+		error("[ProfileServicePlus] Invalid or missing profile_store_index")
 	end
 
 	-- Type checking:
 	if profile_store_name == nil or type(profile_store_name) ~= "string" then
-		Error('Missing or invalid "Name" parameter')
+		error('[ProfileServicePlus] Missing or invalid "Name" parameter')
 	elseif #profile_store_name == 0 then
-		Error("ProfileStore name cannot be an empty string")
+		error("[ProfileServicePlus] ProfileStore name cannot be an empty string")
 	end
 
 	if profile_store_scope ~= nil and (type(profile_store_scope) ~= "string" or #profile_store_scope == 0) then
-		Error('Invalid "Scope" parameter')
+		error('[ProfileServicePlus] Invalid "Scope" parameter')
 	end
 
 	if type(profile_template) ~= "table" then
-		Error("Invalid profile_template")
+		error("[ProfileServicePlus] Invalid profile_template")
 	end
 
 	local self
@@ -2776,7 +2807,7 @@ if IsStudio == true then
 
 		local no_internet_access = status == false and string.find(message, "ConnectFail", 1, true) ~= nil
 		if no_internet_access == true then
-			Warn("No internet access - check your network connection")
+			warn("[ProfileServicePlus] No internet access - check your network connection")
 		end
 
 		if
@@ -2789,9 +2820,9 @@ if IsStudio == true then
 		then
 			UseMockDataStore = true
 			ProfileService._use_mock_data_store = true
-			Print("Roblox API services unavailable - data will not be saved")
+			print("[ProfileServicePlus] Roblox API services unavailable - data will not be saved")
 		else
-			Print("Roblox API services available - data will be saved")
+			print("[ProfileServicePlus] Roblox API services available - data will be saved")
 		end
 
 		IsLiveCheckActive = false
@@ -2849,7 +2880,7 @@ RunService.Heartbeat:Connect(function()
 			ProfileService.CriticalState = true
 			ProfileService.CriticalStateSignal:Fire(true)
 			CriticalStateStart = os.clock()
-			Warn("Entered critical state")
+			warn("[ProfileServicePlus] Entered critical state")
 		end
 	else
 		if #IssueQueue >= SETTINGS.IssueCountForCriticalState then
@@ -2857,7 +2888,7 @@ RunService.Heartbeat:Connect(function()
 		elseif os.clock() - CriticalStateStart > SETTINGS.CriticalStateLast then
 			ProfileService.CriticalState = false
 			ProfileService.CriticalStateSignal:Fire(false)
-			Warn("Critical state ended")
+			warn("[ProfileServicePlus] Critical state ended")
 		end
 	end
 
