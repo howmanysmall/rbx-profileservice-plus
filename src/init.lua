@@ -203,11 +203,9 @@
 local DataStoreService = game:GetService("DataStoreService") -- TS.import(script, game:GetService("ServerScriptService"), "TS", "modules", "vendor", "data-store-service")
 local RunService = game:GetService("RunService")
 
-local TS = _G[script]
-local Janitor = TS.import(script, TS.getModule(script, "@rbxts", "janitor").src).Janitor
-local Signal = TS.import(script, TS.getModule(script, "@rbxts", "rbx-better-signal").out)
-
-local Promise = TS.Promise
+local Janitor = require(script.Parent.Janitor)
+local Promise = require(script.Parent.Promise)
+local Signal = require(script.Parent.Signal)
 
 local StringRep = require(script.StringRep)
 local TimeFunctions = require(script.TimeFunctions)
