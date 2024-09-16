@@ -1,6 +1,6 @@
 import type { ViewProfile } from "./globals";
 
-export interface ProfileVersionQuery<T extends object, RobloxMetadata = unknown> {
+export default interface ProfileVersionQuery<T extends object, RobloxMetadata = unknown> {
 	/**
 	 * Retrieves the next Profile available.
 	 */

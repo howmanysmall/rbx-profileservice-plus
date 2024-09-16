@@ -1,3 +1,6 @@
+--!native
+--!optimize 2
+
 -- local Madwork = _G.Madwork
 --[[
 {Madwork}
@@ -111,7 +114,7 @@
 		Profile.Data              [table] -- Writable table that gets saved automatically and once the profile is released
 		Profile.Metadata          [table] (Read-only) -- Information about this profile
 
-			Profile.Metadata.ProfileCreateTime   [number] (Read-only) -- TimeFunctions.OsTime() timestamp of profile creation
+			Profile.Metadata.ProfileCreateTime   [number] (Read-only) -- os.time() timestamp of profile creation
 			Profile.Metadata.SessionLoadCount    [number] (Read-only) -- Amount of times the profile was loaded
 			Profile.Metadata.ActiveSession       [table] (Read-only) {place_id, game_job_id} / nil -- Set to a session link if a
 				game session is currently having this profile loaded; nil if released
@@ -205,19 +208,32 @@ local RunService = game:GetService("RunService")
 
 local TS = _G[script]
 local Janitor = TS.import(script, TS.getModule(script, "@rbxts", "janitor").src).Janitor
+local Promise = TS.Promise
 local Signal = TS.import(script, TS.getModule(script, "@rbxts", "rbx-better-signal").out)
 
-local Promise = TS.Promise
+local RepeatCache = {}
+local function StringRep(ToRepeat: string, Amount: number): string
+	local StringCache = RepeatCache[ToRepeat]
+	if not StringCache then
+		StringCache = {}
+		RepeatCache[ToRepeat] = StringCache
+	end
 
-local StringRep = require(script.StringRep)
-local TimeFunctions = require(script.TimeFunctions)
+	local RepeatString = StringCache[Amount]
+	if not RepeatString then
+		RepeatString = string.rep(ToRepeat, Amount)
+		StringCache[Amount] = RepeatString
+	end
+
+	return RepeatString
+end
 
 local SETTINGS = {
 	AutoSaveProfiles = 30; -- Seconds (This value may vary - ProfileService will split the auto save load evenly in the given time)
 	RobloxWriteCooldown = 7; -- Seconds between successive DataStore calls for the same key
 	ForceLoadMaxSteps = 8; -- Steps taken before ForceLoad request steals the active session for a profile
 	AssumeDeadSessionLock = 30 * 60; -- (seconds) If a profile hasn't been updated for 30 minutes, assume the session lock is dead
-	-- As of writing, TimeFunctions.OsTime() is not completely reliable, so we can only assume session locks are dead after a significant amount of time.
+	-- As of writing, os.time() is not completely reliable, so we can only assume session locks are dead after a significant amount of time.
 
 	IssueCountForCriticalState = 5; -- Issues to collect to announce critical state
 	IssueLast = 120; -- Seconds
@@ -487,7 +503,7 @@ end
 			ActiveSession = {place_id, game_job_id} / nil,
 			ForceLoadSession = {place_id, game_job_id} / nil,
 			Metatags = {},
-			LastUpdate = 0, -- TimeFunctions.OsTime()
+			LastUpdate = 0, -- os.time()
 		},
 		RobloxMetadata = {},
 		UserIds = {},
@@ -759,7 +775,7 @@ local function MockUpdateAsync(mock_data_store, profile_store_name, key, transfo
 		mock_data_store[profile_store_name] = profile_store
 	end
 
-	local epoch_time = math.floor(TimeFunctions.OsTime() * 1000)
+	local epoch_time = math.floor(os.time() * 1000)
 	local mock_entry = profile_store[key]
 	local mock_entry_was_nil = false
 
@@ -1185,7 +1201,7 @@ local SaveProfileAsync = ProfileFunctionFenv("SaveProfileAsync", function(profil
 
 						if is_overwriting ~= true then
 							latest_data.Metadata.Metatags = profile.Metadata.Metatags -- Metadata.Metatags is the only actively savable component of Metadata
-							latest_data.Metadata.LastUpdate = TimeFunctions.OsTime()
+							latest_data.Metadata.LastUpdate = os.time()
 							if release_from_session == true or force_load_pending == true then
 								latest_data.Metadata.ActiveSession = nil
 							end
@@ -2241,7 +2257,7 @@ ProfileStore.LoadProfile = ProfileFunctionFenv(
 								if IsThisSession(active_session) == false then
 									local last_update = latest_data.Metadata.LastUpdate
 									if last_update ~= nil then
-										if TimeFunctions.OsTime() - last_update > SETTINGS.AssumeDeadSessionLock then
+										if os.time() - last_update > SETTINGS.AssumeDeadSessionLock then
 											latest_data.Metadata.ActiveSession = {PlaceId, JobId}
 											latest_data.Metadata.ForceLoadSession = nil
 											return
@@ -2274,7 +2290,7 @@ ProfileStore.LoadProfile = ProfileFunctionFenv(
 							ActiveSession = {PlaceId, JobId};
 							ForceLoadSession = nil;
 							Metatags = {};
-							ProfileCreateTime = TimeFunctions.OsTime();
+							ProfileCreateTime = os.time();
 							SessionLoadCount = 0;
 						}
 					end;
@@ -2284,7 +2300,7 @@ ProfileStore.LoadProfile = ProfileFunctionFenv(
 							local active_session = latest_data.Metadata.ActiveSession
 							if active_session ~= nil and IsThisSession(active_session) == true then
 								latest_data.Metadata.SessionLoadCount += 1
-								latest_data.Metadata.LastUpdate = TimeFunctions.OsTime()
+								latest_data.Metadata.LastUpdate = os.time()
 							end
 						end
 					end;
@@ -2522,7 +2538,7 @@ function ProfileStore:ViewProfile(profile_key, version, _use_mock) --> [Profile 
 					ActiveSession = nil;
 					ForceLoadSession = nil;
 					Metatags = {};
-					ProfileCreateTime = TimeFunctions.OsTime();
+					ProfileCreateTime = os.time();
 					SessionLoadCount = 0;
 				}
 			end;
@@ -2802,7 +2818,7 @@ if IsStudio == true then
 	task.spawn(function()
 		local status, message = pcall(function()
 			-- This will error if current instance has no Studio API access:
-			DataStoreService:GetDataStore("____PS"):SetAsync("____PS", TimeFunctions.OsTime())
+			DataStoreService:GetDataStore("____PS"):SetAsync("____PS", os.time())
 		end)
 
 		local no_internet_access = status == false and string.find(message, "ConnectFail", 1, true) ~= nil

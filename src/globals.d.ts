@@ -1,15 +1,12 @@
-import type { Paths, PathToValue } from "./advanced-types";
-import type { ProfileVersionQuery } from "./profileVersionQuery";
+import type { PathToValue, Paths } from "./advanced-types";
+import type ProfileVersionQuery from "./profile-version-query";
 
-export type notReleasedHandlerFunc = (
-	placeId: number,
-	gameJobId: string,
-) => "Repeat" | "Cancel" | "ForceLoad" | "Steal";
+export type NotReleasedHandler = (placeId: number, gameJobId: string) => "Cancel" | "ForceLoad" | "Repeat" | "Steal";
 
 export type GlobalUpdateHandler = (globalUpdates: GlobalUpdates) => void;
 export type GlobalUpdateData = {
-	[index: string]: unknown;
-	Type: string;
+	readonly Type: string;
+	readonly [index: string]: unknown;
 };
 
 /**
@@ -128,13 +125,13 @@ export interface ProfileMetadata {
 	/**
 	 * Saved and auto-saved just like Profile.Data
 	 */
-	Metatags: Map<string, unknown>;
+	readonly Metatags: Map<string, unknown>;
 	/**
 	 * The most recent version of Metadata.Metatags which has
 	 * been saved to the DataStore during the last auto-save
 	 * or `Profile.Save()` call
 	 */
-	MetatagsLatest: Map<string, unknown>;
+	readonly MetatagsLatest: Map<string, unknown>;
 }
 
 export interface Profile<DataType extends object, RobloxMetadata = unknown>
@@ -155,7 +152,7 @@ export interface Profile<DataType extends object, RobloxMetadata = unknown>
 	 *
 	 * `MetatagsUpdated` example use can be found in the [Developer Products example code](https://madstudioroblox.github.io/ProfileService/tutorial/developer_products/).
 	 */
-	MetatagsUpdated: RBXScriptSignal<(metatagsLatest: ProfileMetadata) => void>;
+	readonly MetatagsUpdated: RBXScriptSignal<(metatagsLatest: ProfileMetadata) => void>;
 }
 
 export interface ViewProfile<DataType extends object, RobloxMetadata = unknown> {
@@ -197,33 +194,33 @@ export interface ViewProfile<DataType extends object, RobloxMetadata = unknown> 
 	 * };
 	 * ```
 	 */
-	RobloxMetadata: RobloxMetadata;
+	readonly RobloxMetadata: RobloxMetadata;
 
 	/**
 	 * User ids associated with this profile. Entries must be added with [Profile:AddUserId()](https://madstudioroblox.github.io/ProfileService/api/#profileadduserid) and removed with [Profile:RemoveUserId()](https://madstudioroblox.github.io/ProfileService/api/#profileremoveuserid).
 	 */
-	UserIds: Array<number>;
+	readonly UserIds: ReadonlyArray<number>;
 
 	/**
 	 * The [DataStoreKeyInfo (Official documentation)](https://developer.roblox.com/en-us/api-reference/class/DataStoreKeyInfo) instance related to this profile
 	 */
-	KeyInfo: DataStoreKeyInfo;
+	readonly KeyInfo: DataStoreKeyInfo;
 
 	/**
 	 * A signal that gets triggered every time `Profile.KeyInfo` is updated with a new [DataStoreKeyInfo](https://developer.roblox.com/en-us/api-reference/class/DataStoreKeyInfo) instance reference after every auto-save or profile release.
 	 */
-	KeyInfoUpdated: RBXScriptSignal<(keyInfo: DataStoreKeyInfo) => void>;
+	readonly KeyInfoUpdated: RBXScriptSignal<(keyInfo: DataStoreKeyInfo) => void>;
 
 	/**
 	 * A signal that gets triggered every time `Profile.Data` is updated with a new value.
 	 * This is fired when you call `Profile:Set()` or `Profile:SetToPath()`.
 	 */
-	DataUpdated: RBXScriptSignal<<P extends Paths<DataType>>(path: P) => void>;
+	readonly DataUpdated: RBXScriptSignal<<P extends Paths<DataType>>(path: P) => void>;
 
 	/**
 	 * This is the GlobalUpdates object tied to this specific Profile. It exposes GlobalUpdates methods for update processing. (See [Global Updates](https://madstudioroblox.github.io/ProfileService/api/#global-updates) for more info)
 	 */
-	GlobalUpdates: GlobalUpdates;
+	readonly GlobalUpdates: GlobalUpdates;
 
 	/**
 	 * Returns `true` while the profile is session-locked and saving of changes to Profile.Data is guaranteed.
@@ -398,14 +395,14 @@ export interface ViewProfile<DataType extends object, RobloxMetadata = unknown> 
 	 * @param path The path to the object from the data table. This can be a dot separated string or an array of strings.
 	 * @param valueObject The ValueObject to store from.
 	 */
-	StoreToPathOnValueChange(path: string | Array<string>, valueObject: ValueBase): RBXScriptConnection;
+	StoreToPathOnValueChange(path: Array<string> | string, valueObject: ValueBase): RBXScriptConnection;
 
 	/**
 	 * Stores the attribute into the Profile's Data table when the attribute changes.
 	 * @param path The path to the object from the data table. This can be a dot separated string or an array of strings.
 	 * @param object The Instance to store from.
 	 */
-	StoreToPathOnAttributeChange(path: string | Array<string>, object: Instance): RBXScriptConnection;
+	StoreToPathOnAttributeChange(path: Array<string> | string, object: Instance): RBXScriptConnection;
 
 	/**
 	 * Stores the value into `Profile.Data`. This is how you now store data into the profile.
@@ -492,7 +489,7 @@ export interface ProfileStore<T extends object, RobloxMetadata = unknown> {
 	 * // You don't really have to wipe mock profiles in studio testing
 	 * ```
 	 */
-	Mock: ProfileStore<T, RobloxMetadata>;
+	readonly Mock: ProfileStore<T, RobloxMetadata>;
 
 	/**
 	 * For basic usage, do not pass anything for the `notReleasedHandler` argument.
@@ -517,7 +514,7 @@ export interface ProfileStore<T extends object, RobloxMetadata = unknown> {
 	 */
 	LoadProfile(
 		profileKey: string,
-		notReleasedHandler?: "ForceLoad" | "Steal" | notReleasedHandlerFunc,
+		notReleasedHandler?: "ForceLoad" | "Steal" | NotReleasedHandler,
 	): Profile<T, RobloxMetadata> | undefined;
 
 	/**
@@ -543,7 +540,7 @@ export interface ProfileStore<T extends object, RobloxMetadata = unknown> {
 	 */
 	LoadProfileAsync(
 		profileKey: string,
-		notReleasedHandler?: "ForceLoad" | "Steal" | notReleasedHandlerFunc,
+		notReleasedHandler?: "ForceLoad" | "Steal" | NotReleasedHandler,
 	): Promise<Profile<T, RobloxMetadata> | undefined>;
 
 	/**
