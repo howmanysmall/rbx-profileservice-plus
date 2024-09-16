@@ -1,7 +1,6 @@
-// Define a maximum recursion depth
-type MaxDepth = 10; // Adjust this value as needed
+type MaxDepth = 10; // This seems to be the best value. Don't go to deep (things your mom says to me)
 
-// Decrement type to decrease the depth
+// yeah, i'm insane, how did you know?
 type Decrement<N extends number> = N extends 1
 	? 0
 	: N extends 2
@@ -48,7 +47,8 @@ type Decrement<N extends number> = N extends 1
 export type IsAccessible<T> = T extends object
 	? T extends Callback
 		? false
-		: T extends Array<any>
+		: // eslint-disable-next-line @typescript-eslint/no-explicit-any
+			T extends Array<any>
 			? false
 			: true
 	: false;
@@ -61,7 +61,8 @@ export type Paths<T, D extends number = MaxDepth> = [D] extends [never]
 		: {
 				[K in keyof T]: IsAccessible<T[K]> extends true
 					? K extends string
-						? `${K}.${Paths<T[K], Decrement<D>> & string}` | K
+						? // @ts-expect-error we gotta do this regardless. i want GOOD TYPES!!!!!!!
+							`${K}.${Paths<T[K], Decrement<D>> & string}` | K
 						: never
 					: K & string;
 			}[keyof T];
