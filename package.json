@@ -1,16 +1,16 @@
 {
 	"name": "@rbxts/rbx-profileservice-plus",
-	"version": "1.1.0",
-	"description": "",
+	"version": "2.0.0",
+	"description": "A version of ProfileService with a few added features.",
 	"main": "out/init.lua",
 	"scripts": {
 		"build": "rbxtsc",
 		"watch": "rbxtsc -w",
 		"prepublishOnly": "npm run build"
 	},
-	"keywords": [],
+	"keywords": ["datastores", "profileservice", "roblox", "observability"],
 	"author": "",
-	"license": "ISC",
+	"license": "MIT",
 	"types": "out/index.d.ts",
 	"files": ["out", "!**/*.tsbuildinfo"],
 	"publishConfig": {
