@@ -14,17 +14,18 @@
 		"module": "commonjs",
 		"moduleResolution": "Node",
 		"resolveJsonModule": true,
-		"typeRoots": ["node_modules/@rbxts", "node_modules/@flamework", "node_modules/@rbxutil"],
+		"typeRoots": ["node_modules/@rbxts"],
 		"checkJs": true,
 		"strict": true,
 		"noFallthroughCasesInSwitch": true,
 		"noImplicitReturns": true,
 		"noUncheckedIndexedAccess": true,
 		"useUnknownInCatchVariables": true,
+		"declaration": true,
 		"downlevelIteration": true,
 		"outDir": "out",
 		"allowSyntheticDefaultImports": true,
-		"forceConsistentCasingInFileNames": true,
+		"forceConsistentCasingInFileNames": true
 	},
 	"include": ["src/**/*.ts", "src/**/*.tsx"]
 }

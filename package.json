@@ -1,6 +1,6 @@
 {
 	"name": "@rbxts/rbx-profileservice-plus",
-	"version": "3.0.0",
+	"version": "3.0.1",
 	"description": "A version of ProfileService with a few added features.",
 	"keywords": [
 		"datastores",
