@@ -1,39 +1,47 @@
 {
 	"name": "@rbxts/rbx-profileservice-plus",
-	"version": "2.0.1",
+	"version": "3.0.0",
 	"description": "A version of ProfileService with a few added features.",
+	"keywords": [
+		"datastores",
+		"profileservice",
+		"roblox",
+		"observability"
+	],
+	"license": "MIT",
+	"type": "module",
 	"main": "out/init.luau",
+	"types": "out/index.d.ts",
+	"files": [
+		"out",
+		"!**/*.tsbuildinfo"
+	],
 	"scripts": {
 		"build": "rbxtsc",
-		"watch": "rbxtsc -w",
-		"prepublishOnly": "npm run build"
+		"prepublishOnly": "bun run build",
+		"watch": "rbxtsc -w"
 	},
-	"keywords": ["datastores", "profileservice", "roblox", "observability"],
-	"author": "",
-	"license": "MIT",
-	"types": "out/index.d.ts",
-	"files": ["out", "!**/*.tsbuildinfo"],
-	"publishConfig": {
-		"access": "public"
+	"dependencies": {
+		"@rbxts/janitor": "^1.18.3-ts.0",
+		"@rbxts/rbx-better-signal": "^2.1.0"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.2.2",
-		"@rbxts/compiler-types": "3.0.0-types.0",
-		"@rbxts/types": "^1.0.805",
 		"@eslint-react/eslint-plugin": "1.52.3",
 		"@eslint/config-inspector": "^1.1.0",
 		"@isentinel/eslint-config": "^2.0.0",
+		"@rbxts/compiler-types": "3.0.0-types.0",
+		"@rbxts/types": "^1.0.805",
 		"eslint": "9.32.0",
 		"eslint-config-biome": "^2.1.3",
 		"eslint-plugin-jest": "29.0.1",
 		"eslint-plugin-perfectionist": "^4.15.0",
 		"eslint-plugin-react-roblox-hooks": "^5.1.0-rbx.1",
-		"roblox-ts": "^3.0.0",
 		"jiti": "^2.4.2",
+		"roblox-ts": "^3.0.0",
 		"typescript": "5.5.3"
 	},
-	"dependencies": {
-		"@rbxts/rbx-better-signal": "^2.1.0",
-		"@rbxts/janitor": "^1.18.3-ts.0"
+	"publishConfig": {
+		"access": "public"
 	}
 }

@@ -1,3 +1,4 @@
+/* eslint-disable max-classes-per-file -- i really don't care */
 import type { Paths, PathToValue } from "./advanced-types";
 import type ProfileVersionQuery from "./profile-version-query";
 
@@ -37,13 +38,13 @@ export interface GlobalUpdateData {
  *   `.LockActiveUpdate(updateId)`
  * - `Cleared` updates will immediately disappear from the profile forever.
  */
-export interface GlobalUpdates {
+export declare class GlobalUpdates {
 	/**
 	 * Used to send a new `Active` update to the profile.
 	 *
 	 * @param updateData - The new update.
 	 */
-	AddActiveUpdate(updateData: GlobalUpdateData): void;
+	public AddActiveUpdate(updateData: GlobalUpdateData): void;
 
 	/**
 	 * Changing `Active` updates can be used for stacking player gifts,
@@ -54,21 +55,21 @@ export interface GlobalUpdates {
 	 * @param updateId - Id of an existing global update.
 	 * @param updateData - New data that replaces previously set updateData.
 	 */
-	ChangeActiveUpdate(updateId: number, updateData: GlobalUpdateData): void;
+	public ChangeActiveUpdate(updateId: number, updateData: GlobalUpdateData): void;
 
 	/**
 	 * Removes an `Active` update from the profile completely.
 	 *
 	 * @param updateId - Id of an existing global update.
 	 */
-	ClearActiveUpdate(updateId: number): void;
+	public ClearActiveUpdate(updateId: number): void;
 
 	/**
 	 * Clears a `Locked` update completely from the profile.
 	 *
 	 * Do not call when profile has been released.
 	 */
-	ClearLockedUpdate(updateId: number): void;
+	public ClearLockedUpdate(updateId: number): void;
 
 	/**
 	 * [[updateId, updateData]].
@@ -79,12 +80,13 @@ export interface GlobalUpdates {
 	 * @example
 	 *
 	 * ```ts
-	 * for (const update of profile.GlobalUpdates.GetActiveUpdates()) {
-	 * 	profile.GlobalUpdates.LockActiveUpdate(update[0]);
-	 * }
+	 * for (const [updateId] of profile.GlobalUpdates.GetActiveUpdates())
+	 * 	profile.GlobalUpdates.LockActiveUpdate(updateId);
 	 * ```
+	 *
+	 * @returns A ReadonlyArray of active updates.
 	 */
-	GetActiveUpdates(): Array<[updateId: number, updateData: GlobalUpdateData]>;
+	public GetActiveUpdates(): ReadonlyArray<[updateId: number, updateData: GlobalUpdateData]>;
 
 	/**
 	 * Should be used immediately after a `Profile` is loaded to scan and
@@ -93,34 +95,42 @@ export interface GlobalUpdates {
 	 * @example
 	 *
 	 * ```ts
-	 * for (const update of profile.GlobalUpdates.GetLockedUpdates()) {
-	 * 	const updateId = update[0];
-	 * 	const updateData = update[1];
-	 *
+	 * for (const [
+	 * 	updateId,
+	 * 	updateData,
+	 * ] of profile.GlobalUpdates.GetLockedUpdates()) {
 	 * 	if (
 	 * 		updateData.Type === "AdminGift" &&
 	 * 		updateData.Item == "Coins"
-	 * 	) {
+	 * 	)
 	 * 		profile.Data.Coins += updateData.Amount;
-	 * 	}
 	 *
 	 * 	profile.GlobalUpdates.ClearLockedUpdate(updateId);
 	 * }
 	 * ```
+	 *
+	 * @returns A ReadonlyArray of locked updates.
 	 */
-	GetLockedUpdates(): Array<[updateId: number, updateData: GlobalUpdateData]>;
+	public GetLockedUpdates(): ReadonlyArray<[updateId: number, updateData: GlobalUpdateData]>;
 
 	/**
-	 * In most games, you should progress all Active updates to Locked state:
+	 * In most games, you should progress all Active updates to Locked state.
+	 *
 	 * @example
-	 * 
+	 *
 	 * ```ts
-	 * profile.GlobalUpdates.ListenToNewActiveUpdate((updateId, updateData) => profile.GlobalUpdates.LockActiveUpdate(updateId));
+	 * profile.GlobalUpdates.ListenToNewActiveUpdate(
+	 * 	(updateId, updateData) =>
+	 * 		profile.GlobalUpdates.LockActiveUpdate(updateId),
+	 * );
 	 * ```
-	 * 
-	 * @param listener The listener for new active updates.
+	 *
+	 * @param listener - The listener for new active updates.
+	 * @returns A connection object that can be used to disconnect the listener.
 	 */
-	ListenToNewActiveUpdate(listener: (updateId: number, updateData: GlobalUpdateData) => void): RBXScriptConnection;
+	public ListenToNewActiveUpdate(
+		listener: (updateId: number, updateData: GlobalUpdateData) => void,
+	): RBXScriptConnection;
 
 	/**
 	 * When you get a Locked update via
@@ -140,8 +150,11 @@ export interface GlobalUpdates {
 	 * ```
 	 *
 	 * @param listener - The listener for new locked updates.
+	 * @returns A connection object that can be used to disconnect the listener.
 	 */
-	ListenToNewLockedUpdate(listener: (updateId: number, updateData: GlobalUpdateData) => void): RBXScriptConnection;
+	public ListenToNewLockedUpdate(
+		listener: (updateId: number, updateData: GlobalUpdateData) => void,
+	): RBXScriptConnection;
 
 	/**
 	 * Turns an `Active` update into a `Locked` update. Will invoke
@@ -152,7 +165,7 @@ export interface GlobalUpdates {
 	 *
 	 * @param updateId - The id of the GlobalUpdate to lock.
 	 */
-	LockActiveUpdate(updateId: number): void;
+	public LockActiveUpdate(updateId: number): void;
 }
 
 /** An object containing data about the profile itself. */
@@ -186,6 +199,7 @@ export interface Profile<DataType extends object, RobloxMetadata = unknown>
 	 * locally via `Profile:Release()`.
 	 */
 	readonly Data: DataType;
+
 	/** A table containing data about the profile itself. */
 	readonly Metadata: ProfileMetadata;
 
@@ -207,7 +221,101 @@ export interface Profile<DataType extends object, RobloxMetadata = unknown>
 	readonly MetatagsUpdated: RBXScriptSignal<(metatagsLatest: ProfileMetadata) => void>;
 }
 
-export interface ViewProfile<DataType extends object, RobloxMetadata = unknown> {
+// eslint-disable-next-line ts/no-unnecessary-type-parameters -- don't care
+export declare class ViewProfile<DataType extends object, RobloxMetadata = unknown> {
+	/**
+	 * The primary variable of a Profile object. The developer is free to read
+	 * and write from the table while it is automatically saved to the
+	 * DataStore. `Profile.Data` will no longer be saved after being released
+	 * remotely or locally via `Profile.Release()`.
+	 */
+	public readonly Data: DataType | undefined;
+
+	/**
+	 * A signal that gets triggered every time `Profile.Data` is updated with a
+	 * new value. This is fired when you call `Profile:Set()` or
+	 * `Profile:SetToPath()`.
+	 */
+	// eslint-disable-next-line ts/no-unnecessary-type-parameters -- don't care
+	public readonly DataUpdated: RBXScriptSignal<<P extends Paths<DataType>>(path: P) => void>;
+
+	/**
+	 * This is the GlobalUpdates object tied to this specific Profile. It
+	 * exposes GlobalUpdates methods for update processing. (See [Global
+	 * Updates](https://madstudioroblox.github.io/ProfileService/api/#global-updates)
+	 * for more info).
+	 */
+	public readonly GlobalUpdates: GlobalUpdates;
+
+	/**
+	 * The [DataStoreKeyInfo (Official
+	 * documentation)](https://developer.roblox.com/en-us/api-reference/class/DataStoreKeyInfo)
+	 * instance related to this profile.
+	 */
+	public readonly KeyInfo: DataStoreKeyInfo;
+
+	/**
+	 * A signal that gets triggered every time `Profile.KeyInfo` is updated with
+	 * a new
+	 * [DataStoreKeyInfo](https://developer.roblox.com/en-us/api-reference/class/DataStoreKeyInfo)
+	 * instance reference after every auto-save or profile release.
+	 */
+	public readonly KeyInfoUpdated: RBXScriptSignal<(keyInfo: DataStoreKeyInfo) => void>;
+
+	/** A table containing data about the profile itself. */
+	public readonly Metadata: ProfileMetadata | undefined;
+
+	/**
+	 * _Non-strict reference - developer can set this value to a new table
+	 * reference_.
+	 *
+	 * Table that gets saved as [Metadata (Official
+	 * documentation)](https://developer.roblox.com/en-us/articles/Data-store#metadata-1)
+	 * of a DataStore key belonging to the profile. The way this table is saved
+	 * is equivalent to using
+	 * `DataStoreSetOptions:SetMetadata(Profile.RobloxMetadata)` and passing the
+	 * `DataStoreSetOptions` object to a `:SetAsync()` call, except changes will
+	 * truly get saved on the next auto-update cycle or when the profile is
+	 * released. The periodic saving and saving upon releasing behavior is
+	 * identical to that of `Profile.Data` - After the profile is released
+	 * further changes to this value will not be saved.
+	 *
+	 * **Be cautious of very harsh limits for maximum Roblox Metadata size - As
+	 * of writing this, total table content size cannot exceed 300
+	 * characters.**.
+	 *
+	 * @example
+	 *
+	 * ```ts
+	 * const profile; // A profile object you loaded
+	 *
+	 * // Mimicking the Roblox hub example:
+	 * profile.RobloxMetadata = { ExperienceElement: "Fire" };
+	 *
+	 * // You can read from it and write to it at will:
+	 * print(profile.RobloxMetadata.ExperienceElement);
+	 * profile.RobloxMetadata.ExperienceElement = undefined;
+	 * profile.RobloxMetadata.UserCategory = "Casual";
+	 *
+	 * // I think setting it to a whole table at profile load would
+	 * //  be more safe considering the size limit for meta data
+	 * //  is pretty tight:
+	 * profile.RobloxMetadata = {
+	 * 	UserCategory: "Casual",
+	 * 	FavoriteColor: [1, 0, 0],
+	 * };
+	 * ```
+	 */
+	public readonly RobloxMetadata: RobloxMetadata;
+
+	/**
+	 * User ids associated with this profile. Entries must be added with
+	 * [Profile:AddUserId()](https://madstudioroblox.github.io/ProfileService/api/#profileadduserid)
+	 * and removed with
+	 * [Profile:RemoveUserId()](https://madstudioroblox.github.io/ProfileService/api/#profileremoveuserid).
+	 */
+	public readonly UserIds: ReadonlyArray<number>;
+
 	/**
 	 * Associates a `UserId` with the profile. Multiple users can be associated
 	 * with a single profile by calling this method for each individual
@@ -220,7 +328,7 @@ export interface ViewProfile<DataType extends object, RobloxMetadata = unknown> 
 	 *
 	 * @param userId - The UserId to add to the Profile.
 	 */
-	AddUserId(userId: number): void;
+	public AddUserId(userId: number): void;
 
 	/**
 	 * **Only works for profiles loaded through
@@ -234,25 +342,10 @@ export interface ViewProfile<DataType extends object, RobloxMetadata = unknown> 
 	 * recover player data through
 	 * [:ProfileVersionQuery()](https://madstudioroblox.github.io/ProfileService/api/#profilestoreprofileversionquery).
 	 */
-	ClearGlobalUpdates(): void;
-
-	/**
-	 * The primary variable of a Profile object. The developer is free to read
-	 * and write from the table while it is automatically saved to the
-	 * DataStore. `Profile.Data` will no longer be saved after being released
-	 * remotely or locally via `Profile.Release()`.
-	 */
-	readonly Data: DataType | undefined;
-
-	/**
-	 * A signal that gets triggered every time `Profile.Data` is updated with a
-	 * new value. This is fired when you call `Profile:Set()` or
-	 * `Profile:SetToPath()`.
-	 */
-	readonly DataUpdated: RBXScriptSignal<<P extends Paths<DataType>>(path: P) => void>;
+	public ClearGlobalUpdates(): void;
 
 	/** Destroys the Profile's Janitor. */
-	Destroy(): void;
+	public Destroy(): void;
 
 	/**
 	 * Equivalent of `Profile.Metadata.Metatags.get(tagName)`.
@@ -260,15 +353,7 @@ export interface ViewProfile<DataType extends object, RobloxMetadata = unknown> 
 	 * @param tagName - The tag name to retrieve.
 	 * @see `Profile.SetMetatag` for more info.
 	 */
-	GetMetatag(tagName: string): unknown;
-
-	/**
-	 * This is the GlobalUpdates object tied to this specific Profile. It
-	 * exposes GlobalUpdates methods for update processing. (See [Global
-	 * Updates](https://madstudioroblox.github.io/ProfileService/api/#global-updates)
-	 * for more info).
-	 */
-	readonly GlobalUpdates: GlobalUpdates;
+	public GetMetatag(tagName: string): unknown;
 
 	/**
 	 * Returns a string containing DataStore name, scope and key; Used for
@@ -276,28 +361,13 @@ export interface ViewProfile<DataType extends object, RobloxMetadata = unknown> 
 	 *
 	 * Example return: `"[Store:"GameData";Scope:"Live";Key:"Player_2312310"]"`.
 	 */
-	Identify(): string;
+	public Identify(): string;
 
 	/**
 	 * Returns `true` while the profile is session-locked and saving of changes
 	 * to Profile.Data is guaranteed.
 	 */
-	IsActive(): boolean;
-
-	/**
-	 * The [DataStoreKeyInfo (Official
-	 * documentation)](https://developer.roblox.com/en-us/api-reference/class/DataStoreKeyInfo)
-	 * instance related to this profile.
-	 */
-	readonly KeyInfo: DataStoreKeyInfo;
-
-	/**
-	 * A signal that gets triggered every time `Profile.KeyInfo` is updated with
-	 * a new
-	 * [DataStoreKeyInfo](https://developer.roblox.com/en-us/api-reference/class/DataStoreKeyInfo)
-	 * instance reference after every auto-save or profile release.
-	 */
-	readonly KeyInfoUpdated: RBXScriptSignal<(keyInfo: DataStoreKeyInfo) => void>;
+	public IsActive(): boolean;
 
 	/**
 	 * In many cases ProfileService will be fast enough when loading and
@@ -336,8 +406,9 @@ export interface ViewProfile<DataType extends object, RobloxMetadata = unknown> 
 	 *
 	 * @param listener - The listener to execute after the releasing UpdateAsync
 	 *   call finishes.
+	 * @returns The RBXScriptConnection for the listener.
 	 */
-	ListenToHopReady(listener: () => void): RBXScriptConnection;
+	public ListenToHopReady(listener: () => void): RBXScriptConnection;
 
 	/**
 	 * Listener functions subscribed to `Profile.ListenToRelease()` will be
@@ -349,11 +420,12 @@ export interface ViewProfile<DataType extends object, RobloxMetadata = unknown> 
 	 * the Player when this happens.
 	 *
 	 * You cannot modify `Profile.Data` once this has been triggered.
+	 *
+	 * @param listener - The listener to execute after the releasing UpdateAsync
+	 *   call finishes.
+	 * @returns The RBXScriptConnection for the listener.
 	 */
-	ListenToRelease(listener: (placeId?: number, jobId?: string) => void): RBXScriptConnection;
-
-	/** A table containing data about the profile itself. */
-	readonly Metadata: ProfileMetadata | void;
+	public ListenToRelease(listener: (placeId?: number, jobId?: string) => void): RBXScriptConnection;
 
 	/**
 	 * **Only works for profiles loaded through
@@ -372,9 +444,14 @@ export interface ViewProfile<DataType extends object, RobloxMetadata = unknown> 
 	 * Pushes the `Profile` payload to the DataStore (saves the profile) and
 	 * releases the session lock for the profile.
 	 */
-	Overwrite(): void;
+	public Overwrite(): void;
 
-	OverwriteAsync(): Promise<void>;
+	/**
+	 * A non-blocking version of {@linkcode Overwrite}.
+	 *
+	 * @returns A promise that resolves when the operation is complete.
+	 */
+	public OverwriteAsync(): Promise<void>;
 
 	/**
 	 * Stores the value into `Profile.Data`. This is how you now store data into
@@ -383,7 +460,7 @@ export interface ViewProfile<DataType extends object, RobloxMetadata = unknown> 
 	 * @param key - The key to store the value in.
 	 * @param value - The value to store.
 	 */
-	RawSet<Key extends keyof DataType>(key: Key, value: DataType[Key]): void;
+	public RawSet<Key extends keyof DataType>(key: Key, value: DataType[Key]): void;
 
 	/**
 	 * Stores the value into `Profile.Data` following a path. This is how you
@@ -393,7 +470,7 @@ export interface ViewProfile<DataType extends object, RobloxMetadata = unknown> 
 	 *   separated string.
 	 * @param value - The value to store.
 	 */
-	RawSetToPath<P extends Paths<DataType>>(path: P, value: PathToValue<DataType, P>): void;
+	public RawSetToPath<P extends Paths<DataType>>(path: P, value: PathToValue<DataType, P>): void;
 
 	/**
 	 * Fills in missing variables inside `Profile.Data` from `profileTemplate`
@@ -425,63 +502,22 @@ export interface ViewProfile<DataType extends object, RobloxMetadata = unknown> 
 	 * end
 	 * ```
 	 */
-	Reconcile(): void;
+	public Reconcile(): void;
+
 	/**
 	 * Removes the session lock for this profile for this Roblox server. Call
 	 * this method after you're done working with the `Profile` object. Profile
 	 * data will be immediately saved for the last time.
 	 */
-	Release(): void;
+	public Release(): void;
 
 	/**
-	 * Unassociates `UserId` with the profile if it was initially associated.
+	 * Disassociates `UserId` with the profile if it was initially associated.
 	 *
 	 * @param userId - The UserId to remove from the Profile.
 	 */
-	RemoveUserId(userId: number): void;
+	public RemoveUserId(userId: number): void;
 
-	/**
-	 * _Non-strict reference - developer can set this value to a new table
-	 * reference_.
-	 *
-	 * Table that gets saved as [Metadata (Official
-	 * documentation)](https://developer.roblox.com/en-us/articles/Data-store#metadata-1)
-	 * of a DataStore key belonging to the profile. The way this table is saved
-	 * is equivalent to using
-	 * `DataStoreSetOptions:SetMetadata(Profile.RobloxMetadata)` and passing the
-	 * `DataStoreSetOptions` object to a `:SetAsync()` call, except changes will
-	 * truly get saved on the next auto-update cycle or when the profile is
-	 * released. The periodic saving and saving upon releasing behaviour is
-	 * identical to that of `Profile.Data` - After the profile is released
-	 * further changes to this value will not be saved.
-	 *
-	 * **Be cautious of very harsh limits for maximum Roblox Metadata size - As
-	 * of writing this, total table content size cannot exceed 300
-	 * characters.**.
-	 *
-	 * @example
-	 *
-	 * ```ts
-	 * const profile; // A profile object you loaded
-	 *
-	 * // Mimicking the Roblox hub example:
-	 * profile.RobloxMetadata = { ExperienceElement: "Fire" };
-	 *
-	 * // You can read from it and write to it at will:
-	 * print(profile.RobloxMetadata.ExperienceElement);
-	 * profile.RobloxMetadata.ExperienceElement = undefined;
-	 * profile.RobloxMetadata.UserCategory = "Casual";
-	 *
-	 * // I think setting it to a whole table at profile load would
-	 * //  be more safe considering the size limit for meta data
-	 * //  is pretty tight:
-	 * profile.RobloxMetadata = {
-	 * 	UserCategory: "Casual",
-	 * 	FavoriteColor: [1, 0, 0],
-	 * };
-	 * ```
-	 */
-	readonly RobloxMetadata: RobloxMetadata;
 	/**
 	 * Call `Profile.Save()` to quickly progress `GlobalUpdates` state or to
 	 * speed up the propagation of `Profile.Metadata.Metatags` changes to
@@ -493,11 +529,14 @@ export interface ViewProfile<DataType extends object, RobloxMetadata = unknown> 
 	 *
 	 * Do not call when the profile has been released.
 	 */
-	Save(): void;
+	public Save(): void;
 
-	// Custom Methods
-
-	SaveAsync(): Promise<void>;
+	/**
+	 * A non-blocking version of {@linkcode Save}.
+	 *
+	 * @returns A promise that resolves when the operation is complete.
+	 */
+	public SaveAsync(): Promise<void>;
 
 	/**
 	 * Stores the value into `Profile.Data`. This is how you now store data into
@@ -506,7 +545,7 @@ export interface ViewProfile<DataType extends object, RobloxMetadata = unknown> 
 	 * @param key - The key to store the value in.
 	 * @param value - The value to store.
 	 */
-	Set<Key extends keyof DataType>(key: Key, value: DataType[Key]): void;
+	public Set<Key extends keyof DataType>(key: Key, value: DataType[Key]): void;
 
 	/**
 	 * Equivalent of `Profile.Metadata.Metatags.set(tagName, value)`.
@@ -523,10 +562,10 @@ export interface ViewProfile<DataType extends object, RobloxMetadata = unknown> 
 	 *
 	 * You cannot call this method after a profile has been released.
 	 *
-	 * @param tagName - The tag name.
+	 * @param tagName - The name of the metatag to set on the profile.
 	 * @param value - Any value supported by DataStores.
 	 */
-	SetMetatag(tagName: string, value: unknown): void;
+	public SetMetatag(tagName: string, value: unknown): void;
 
 	/**
 	 * Stores the value into `Profile.Data` following a path. This is how you
@@ -536,7 +575,7 @@ export interface ViewProfile<DataType extends object, RobloxMetadata = unknown> 
 	 *   separated string.
 	 * @param value - The value to store.
 	 */
-	SetToPath<P extends Paths<DataType>>(path: P, value: PathToValue<DataType, P>): void;
+	public SetToPath<P extends Paths<DataType>>(path: P, value: PathToValue<DataType, P>): void;
 
 	/**
 	 * Stores the attribute into the Profile's Data table when the attribute
@@ -545,7 +584,7 @@ export interface ViewProfile<DataType extends object, RobloxMetadata = unknown> 
 	 * @param name - The name of the attribute / the key in the Data table.
 	 * @param object - The Instance to store from.
 	 */
-	StoreOnAttributeChange(name: string, object: Instance): RBXScriptConnection;
+	public StoreOnAttributeChange(name: string, object: Instance): RBXScriptConnection;
 
 	/**
 	 * Stores the Value of ValueObject into the Profile's Data table when the
@@ -554,7 +593,7 @@ export interface ViewProfile<DataType extends object, RobloxMetadata = unknown> 
 	 * @param name - The name of the value in the Data table.
 	 * @param valueObject - The ValueObject to store from.
 	 */
-	StoreOnValueChange(name: string, valueObject: ValueBase): RBXScriptConnection;
+	public StoreOnValueChange(name: string, valueObject: ValueBase): RBXScriptConnection;
 
 	/**
 	 * Stores the attribute into the Profile's Data table when the attribute
@@ -564,7 +603,7 @@ export interface ViewProfile<DataType extends object, RobloxMetadata = unknown> 
 	 *   dot separated string or an array of strings.
 	 * @param object - The Instance to store from.
 	 */
-	StoreToPathOnAttributeChange(path: Array<string> | string, object: Instance): RBXScriptConnection;
+	public StoreToPathOnAttributeChange(path: Array<string> | string, object: Instance): RBXScriptConnection;
 
 	/**
 	 * Stores the Value of ValueObject into the Profile's Data table when the
@@ -574,7 +613,7 @@ export interface ViewProfile<DataType extends object, RobloxMetadata = unknown> 
 	 *   dot separated string or an array of strings.
 	 * @param valueObject - The ValueObject to store from.
 	 */
-	StoreToPathOnValueChange(path: Array<string> | string, valueObject: ValueBase): RBXScriptConnection;
+	public StoreToPathOnValueChange(path: Array<string> | string, valueObject: ValueBase): RBXScriptConnection;
 
 	/**
 	 * Stores the attribute into the Profile's Data table when the attribute
@@ -584,7 +623,7 @@ export interface ViewProfile<DataType extends object, RobloxMetadata = unknown> 
 	 * @param tableName - The name of the table that contains the attribute.
 	 * @param object - The Instance to store from.
 	 */
-	StoreToTableOnAttributeChange(name: string, tableName: string, object: Instance): RBXScriptConnection;
+	public StoreToTableOnAttributeChange(name: string, tableName: string, object: Instance): RBXScriptConnection;
 
 	/**
 	 * Stores the Value of ValueObject into the Profile's Data table when the
@@ -594,24 +633,72 @@ export interface ViewProfile<DataType extends object, RobloxMetadata = unknown> 
 	 * @param tableName - The name of the table that contains the value.
 	 * @param valueObject - The ValueObject to store from.
 	 */
-	StoreToTableOnValueChange(name: string, tableName: string, valueObject: ValueBase): RBXScriptConnection;
-
-	// SetToPath(key: Array<string>, value: unknown): void;
-
-	// "excessively deep"
-	// you know what else is excessively deep? your mom.
-	// SetToPath(key: Paths<DataType>, value: unknown): void;
-
-	/**
-	 * User ids associated with this profile. Entries must be added with
-	 * [Profile:AddUserId()](https://madstudioroblox.github.io/ProfileService/api/#profileadduserid)
-	 * and removed with
-	 * [Profile:RemoveUserId()](https://madstudioroblox.github.io/ProfileService/api/#profileremoveuserid).
-	 */
-	readonly UserIds: ReadonlyArray<number>;
+	public StoreToTableOnValueChange(name: string, tableName: string, valueObject: ValueBase): RBXScriptConnection;
 }
 
-export interface ProfileStore<T extends object, RobloxMetadata = unknown> {
+export declare class ProfileStore<T extends object, RobloxMetadata = unknown> {
+	/**
+	 * `ProfileStore.Mock` is a reflection of methods available in the
+	 * `ProfileStore` object with the exception of profile operations being
+	 * performed on profiles stored on a separate, detached "fake" DataStore
+	 * that will be forgotten when the game session ends. You may load profiles
+	 * of the same key from `ProfileStore` and `ProfileStore.Mock` in parallel.
+	 * These will be two different profiles because the regular and mock
+	 * versions of the same `ProfileStore` are completely isolated from each
+	 * other.
+	 *
+	 * `ProfileStore.Mock` is useful for customizing your testing environment in
+	 * cases when you want to [enable Roblox API
+	 * services](https://developer.roblox.com/en-us/articles/Data-store#using-data-stores-in-studio)
+	 * in studio, but don't want ProfileService to save to live keys.
+	 *
+	 * @example
+	 *
+	 * ```ts
+	 * const RunService = game.GetService("RunService")
+	 * let GameProfileStore = ProfileService.GetProfileStore("PlayerData", ProfileTemplate)
+	 * if (RunService:IsStudio() === true) {
+	 * 	GameProfileStore = GameProfileStore.Mock
+	 * }
+	 * ```
+	 *
+	 * A few more things:
+	 *
+	 * - Even when Roblox API services are disabled, `ProfileStore` and
+	 *   `ProfileStore.Mock` will store profiles in separate stores.
+	 * - It's better to think of `ProfileStore` and `ProfileStore.Mock` as two
+	 *   different ProfileStore objects unrelated to each other in any way.
+	 * - It's possible to create a project that utilizes both live and mock
+	 *   profiles on live servers!
+	 *
+	 *
+	 * @example
+	 *
+	 * ```ts
+	 * const ProfileTemplate = {};
+	 * const GameProfileStore = ProfileStore.GetProfileStore(
+	 * 	"PlayerData",
+	 * 	ProfileTemplate,
+	 * );
+	 *
+	 * const LiveProfile = GameProfileStore.LoadProfileAsync(
+	 * 	"profile_key",
+	 * 	"ForceLoad",
+	 * );
+	 * const MockProfile = GameProfileStore.Mock.LoadProfileAsync(
+	 * 	"profile_key",
+	 * 	"ForceLoad",
+	 * );
+	 * print(LiveProfile !== MockProfile); // --> true
+	 *
+	 * // When done using mock profile on live servers: (Prevent memory leak)
+	 * MockProfile.Release();
+	 * GameProfileStore.Mock.WipeProfileAsync("profile_key");
+	 * // You don't really have to wipe mock profiles in studio testing
+	 * ```
+	 */
+	public readonly Mock: ProfileStore<T, RobloxMetadata>;
+
 	/**
 	 * Used to create and manage `Active` global updates for a specified
 	 * `Profile`. Can be called on any Roblox server of your game. Updates
@@ -646,10 +733,11 @@ export interface ProfileStore<T extends object, RobloxMetadata = unknown> {
 	 * @param profileKey - DataStore key.
 	 * @param updateHandler - This function is called with a GlobalUpdates
 	 *   object.
+	 * @returns
 	 */
-	GlobalUpdateProfile(profileKey: string, updateHandler: GlobalUpdateHandler): GlobalUpdates | undefined;
+	public GlobalUpdateProfile(profileKey: string, updateHandler: GlobalUpdateHandler): GlobalUpdates | undefined;
 
-	GlobalUpdateProfileAsync(
+	public GlobalUpdateProfileAsync(
 		profileKey: string,
 		updateHandler: GlobalUpdateHandler,
 	): Promise<GlobalUpdates | undefined>;
@@ -661,11 +749,15 @@ export interface ProfileStore<T extends object, RobloxMetadata = unknown> {
 	 * `notReleasedHandler` as a `function` argument is called when the profile
 	 * is session-locked by a remote Roblox server:.
 	 *
-	 * @example Const profile = ProfileStore.LoadProfile("Player_2312310",
+	 * @example
+	 *
+	 * ```ts
+	 * const profile = ProfileStore.LoadProfile("Player_2312310",
 	 * (placeId, gameJobId) => { // placeId and gameJobId identify the Roblox
 	 * server that has // this profile currently locked. In rare cases, if the
-	 * server // crashes, the profile will stay locked until ForceLoaded by // a
-	 * new session. return "Repeat" || "Cancel" || "ForceLoad" || "Steal" })
+	 * server // crashes, the profile will stay locked until ForceLoaded by // a new session.
+	 * return "Repeat" || "Cancel" || "ForceLoad" || "Steal" })
+	 * ```
 	 *
 	 * @param profileKey - DataStore key.
 	 * @param notReleasedHandler - Called when the profile is session-locked by
@@ -684,7 +776,7 @@ export interface ProfileStore<T extends object, RobloxMetadata = unknown> {
 	 *   session locks faster than `"ForceLoad"` assuming your code knows that
 	 *   the session lock is dead.
 	 */
-	LoadProfile(
+	public LoadProfile(
 		profileKey: string,
 		notReleasedHandler?: "ForceLoad" | "Steal" | NotReleasedHandler,
 	): Profile<T, RobloxMetadata> | undefined;
@@ -720,51 +812,10 @@ export interface ProfileStore<T extends object, RobloxMetadata = unknown> {
 	 *   session locks faster than `"ForceLoad"` assuming your code knows that
 	 *   the session lock is dead.
 	 */
-	LoadProfileAsync(
+	public LoadProfileAsync(
 		profileKey: string,
 		notReleasedHandler?: "ForceLoad" | "Steal" | NotReleasedHandler,
 	): Promise<Profile<T, RobloxMetadata> | undefined>;
-	//
-	// `ProfileStore.Mock` is a reflection of methods available in the `ProfileStore` object with the exception of profile operations being performed on profiles stored on a separate, detached "fake" DataStore that will be forgotten when the game session ends. You may load profiles of the same key from `ProfileStore` and `ProfileStore.Mock` in parallel - these will be two different profiles because the regular and mock versions of the same `ProfileStore` are completely isolated from each other.
-	//
-	// `ProfileStore.Mock` is useful for customizing your testing environment in cases when you want to [enable Roblox API services](https://developer.roblox.com/en-us/articles/Data-store#using-data-stores-in-studio) in studio, but don't want ProfileService to save to live keys:
-	// @example
-	// ```ts
-	// const RunService = game.GetService("RunService")
-	// let GameProfileStore = ProfileService.GetProfileStore("PlayerData", ProfileTemplate)
-	// if (RunService:IsStudio() === true) {
-	// 		GameProfileStore = GameProfileStore.Mock
-	// }
-	// ```
-	// A few more things:
-	//
-	// - Even when Roblox API services are disabled, `ProfileStore` and `ProfileStore.Mock` will store profiles in separate stores.
-	// - It's better to think of `ProfileStore` and `ProfileStore.Mock` as two different ProfileStore objects unrelated to each other in any way.
-	// - It's possible to create a project that utilizes both live and mock profiles on live servers!
-	//
-	// @example
-	// ```ts
-	// const ProfileTemplate = {};
-	// const GameProfileStore = ProfileStore.GetProfileStore(
-	//    "PlayerData",
-	//    ProfileTemplate
-	// );
-	//
-	// const LiveProfile = GameProfileStore.LoadProfileAsync(
-	//    "profile_key",
-	//    "ForceLoad"
-	// );
-	// const MockProfile = GameProfileStore.Mock.LoadProfileAsync(
-	//    "profile_key",
-	//    "ForceLoad"
-	// );
-	// print(LiveProfile !== MockProfile); // --> true
-	//
-	// // When done using mock profile on live servers: (Prevent memory leak)
-	// MockProfile.Release();
-	// GameProfileStore.Mock.WipeProfileAsync("profile_key");
-	/** // You don't really have to wipe mock profiles in studio testing. */
-	readonly Mock: ProfileStore<T, RobloxMetadata>;
 
 	/**
 	 * Creates a profile version query using [DataStore:ListVersionsAsync()
@@ -906,7 +957,7 @@ export interface ProfileStore<T extends object, RobloxMetadata = unknown> {
 	 * @param maxDate - The maximum date to scan profile versions for.
 	 * @returns A query object for fetching profile versions.
 	 */
-	ProfileVersionQuery(
+	public ProfileVersionQuery(
 		profileKey: string,
 		sortDirection?: Enum.SortDirection,
 		minDate?: DateTime | number,
@@ -927,7 +978,7 @@ export interface ProfileStore<T extends object, RobloxMetadata = unknown> {
 	 * @param profileKey - DataStore key.
 	 * @param version - DataStore key version.
 	 */
-	ViewProfile(profileKey: string, version?: string): Profile<T, RobloxMetadata> | undefined;
+	public ViewProfile(profileKey: string, version?: string): Profile<T, RobloxMetadata> | undefined;
 
 	/**
 	 * A non-blocking version of {@linkcode ViewProfile}.
@@ -936,7 +987,7 @@ export interface ProfileStore<T extends object, RobloxMetadata = unknown> {
 	 *   DataStore.
 	 * @param version - The version of the profile to view.
 	 */
-	ViewProfileAsync(profileKey: string, version?: string): Promise<Profile<T, RobloxMetadata> | undefined>;
+	public ViewProfileAsync(profileKey: string, version?: string): Promise<Profile<T, RobloxMetadata> | undefined>;
 
 	/**
 	 * Use `.WipeProfile()` to erase user data when complying with right of
@@ -947,7 +998,7 @@ export interface ProfileStore<T extends object, RobloxMetadata = unknown> {
 	 * @param profileKey - The key to wipe.
 	 * @returns If the wipe was successful or not.
 	 */
-	WipeProfile(profileKey: string): boolean;
+	public WipeProfile(profileKey: string): boolean;
 
 	/**
 	 * A non-blocking version of {@linkcode WipeProfile}.
@@ -955,5 +1006,5 @@ export interface ProfileStore<T extends object, RobloxMetadata = unknown> {
 	 * @param profileKey - The key to wipe.
 	 * @returns If the wipe was successful or not.
 	 */
-	WipeProfileAsync(profileKey: string): Promise<boolean>;
+	public WipeProfileAsync(profileKey: string): Promise<boolean>;
 }
