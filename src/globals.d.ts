@@ -788,12 +788,20 @@ export declare class ProfileStore<T extends object, RobloxMetadata = unknown> {
 	 * `notReleasedHandler` as a `function` argument is called when the profile
 	 * is session-locked by a remote Roblox server:.
 	 *
-	 * @example ProfileStore.LoadProfileAsync("Player_2312310", (placeId,
-	 * gameJobId) => { // placeId and gameJobId identify the Roblox server that
-	 * has // this profile currently locked. In rare cases, if the server //
-	 * crashes, the profile will stay locked until ForceLoaded by // a new
-	 * session. return "Repeat" || "Cancel" || "ForceLoad" || "Steal"
-	 * }).andThen((profile) => {});
+	 * @example
+	 *
+	 * ```ts
+	 * ProfileStore.LoadProfileAsync(
+	 * 	"Player_2312310",
+	 * 	(placeId, gameJobId) => {
+	 * 		// placeId and gameJobId identify the Roblox server that has
+	 * 		// this profile currently locked. In rare cases, if the server
+	 * 		// crashes, the profile will stay locked until ForceLoaded by
+	 * 		// a new session.
+	 * 		return "Repeat" || "Cancel" || "ForceLoad" || "Steal";
+	 * 	},
+	 * ).andThen((profile) => {});
+	 * ```
 	 *
 	 * @param profileKey - DataStore key.
 	 * @param notReleasedHandler - Called when the profile is session-locked by
