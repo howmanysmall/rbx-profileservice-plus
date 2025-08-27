@@ -18,7 +18,8 @@
 	],
 	"scripts": {
 		"build": "rbxtsc",
-		"prepublishOnly": "bun run build",
+		"prepublishOnly": "lunar prepublish-only",
+		"test-building": "lunar test-building",
 		"watch": "rbxtsc -w"
 	},
 	"dependencies": {

@@ -203,9 +203,10 @@
 
 --]]
 
-local DataStoreService = game:GetService("DataStoreService") -- TS.import(script, game:GetService("ServerScriptService"), "TS", "modules", "vendor", "data-store-service")
+local DataStoreService = game:GetService("DataStoreService")
 local RunService = game:GetService("RunService")
 
+-- selene: allow(global_usage)
 local TS = _G[script]
 local Janitor = TS.import(script, TS.getModule(script, "@rbxts", "janitor").src).Janitor
 local Promise = TS.Promise
@@ -250,8 +251,8 @@ local SETTINGS = {
 
 local Madwork -- Standalone Madwork reference for portable version of ProfileService
 
-local function CallFunction(Function, ...)
-	return Function(...)
+local function CallFunction<A..., R...>(callback: (A...) -> R..., ...: A...): R...
+	return callback(...)
 end
 
 do
@@ -437,59 +438,65 @@ ProfileService._user_mock_data_store = {}
 
 ProfileService._use_mock_data_store = false
 
-local ProfileResult = ProfileService.ProfileResult
+local profileResult = ProfileService.ProfileResult
 
-local function CheckIfProfiled(Function)
-	return if type(Function) == "table" then not not Function.IsProfiled else false
+local function CheckIfProfiled(callback): boolean
+	return if type(callback) == "table" then not not callback.IsProfiled else false
 end
 
-local function ProfileFunction(FunctionName: string, Function, ...)
-	if CheckIfProfiled(Function) then
-		return Function(...)
+local function ProfileFunction<A..., R...>(functionName: string, callback: (A...) -> R..., ...: A...): R...
+	if CheckIfProfiled(callback) then
+		return callback(...)
 	end
 
-	local StartTime = os.clock()
-	local Values = table.pack(Function(...))
-	local FinishTime = os.clock() - StartTime
+	local startTime = os.clock()
+	local values = table.pack(callback(...))
+	local finishTime = os.clock() - startTime
 
 	if ProfileService.FireProfileResult then
-		local Success, Error = pcall(function()
-			ProfileResult:Fire(FunctionName, FinishTime)
+		local success, exception = pcall(function()
+			profileResult:Fire(functionName, finishTime)
 		end)
 
-		if not Success then
-			warn(`[ProfileServicePlus] Failed to fire ProfileResult signal - {Error}`)
+		if not success then
+			warn(`[ProfileServicePlus] Failed to fire ProfileResult signal - {exception}`)
 		end
 	end
 
-	return table.unpack(Values, 1, Values.n)
+	return table.unpack(values, 1, values.n)
 end
 
-local function ProfileFunctionFenv(FunctionName: string, Function)
-	if CheckIfProfiled(Function) then
-		return Function
+local function ProfileFunctionFenv<T>(callbackName: string, callback: T): T
+	if type(callback) ~= "function" then
+		return callback
 	end
 
-	local Metatable = {}
-	function Metatable:__call(...)
-		local StartTime = os.clock()
-		local Values = table.pack(Function(...))
-		local FinishTime = os.clock() - StartTime
+	if CheckIfProfiled(callback) then
+		return callback
+	end
+
+	local metatable = {}
+	function metatable:__call(...)
+		local startTime = os.clock()
+		local values = table.pack(callback(...))
+		local finishTime = os.clock() - startTime
 
 		if ProfileService.FireProfileResult then
-			local Success, Error = pcall(function()
-				ProfileResult:Fire(FunctionName, FinishTime)
+			local success, exception = pcall(function()
+				profileResult:Fire(callbackName, finishTime)
 			end)
 
-			if not Success then
-				warn(`[ProfileServicePlus] Failed to fire ProfileResult signal - {Error}`)
+			if not success then
+				warn(`[ProfileServicePlus] Failed to fire ProfileResult signal - {exception}`)
 			end
 		end
 
-		return table.unpack(Values, 1, Values.n)
+		return table.unpack(values, 1, values.n)
 	end
 
-	return setmetatable({IsProfiled = true}, Metatable)
+	return (setmetatable({
+		IsProfiled = true;
+	}, metatable) :: unknown) :: T
 end
 
 --[[
@@ -575,7 +582,7 @@ local CustomWriteQueue = {
 
 local function DeepCopyTable(t)
 	local copy = {}
-	for key, value in next, t do
+	for key, value in pairs(t) do
 		if type(value) == "table" then
 			copy[key] = DeepCopyTable(value)
 		else
@@ -587,7 +594,7 @@ local function DeepCopyTable(t)
 end
 
 local function ReconcileTable(target, template)
-	for k, v in next, template do
+	for k, v in pairs(template) do
 		if type(k) == "string" then -- Only string keys will be reconciled
 			if target[k] == nil then
 				if type(v) == "table" then

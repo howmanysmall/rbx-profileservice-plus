@@ -63,5 +63,27 @@
 		"other": true,
 		"strings": true
 	},
-	"editor.suggest.snippetsPreventQuickSuggestions": false
+	"editor.suggest.snippetsPreventQuickSuggestions": false,
+
+	"luau-lsp.completion.imports.enabled": true,
+	"luau-lsp.completion.imports.requireStyle": "auto",
+	"luau-lsp.completion.imports.stringRequires.enabled": true,
+	"luau-lsp.diagnostics.workspace": false,
+	"luau-lsp.fflags.enableNewSolver": true,
+	"luau-lsp.fflags.override": {},
+	"luau-lsp.inlayHints.functionReturnTypes": true,
+	"luau-lsp.inlayHints.hideHintsForErrorTypes": false,
+	"luau-lsp.inlayHints.hideHintsForMatchingParameterNames": true,
+	"luau-lsp.inlayHints.makeInsertable": true,
+	"luau-lsp.inlayHints.parameterNames": "none",
+	"luau-lsp.inlayHints.parameterTypes": true,
+	"luau-lsp.inlayHints.typeHintMaxLength": 50,
+	"luau-lsp.inlayHints.variableTypes": false,
+	"luau-lsp.platform.type": "standard",
+	"luau-lsp.require.mode": "relativeToFile",
+	"luau-lsp.sourcemap.autogenerate": false,
+	"luau-lsp.sourcemap.enabled": false,
+	"luau-lsp.types.definitionFiles": [],
+	"luau.trace.server": "off",
+	"luau-lsp.completion.enableFragmentAutocomplete": true
 }

@@ -16,6 +16,8 @@ declare class ProfileVersionQuery<T extends object, RobloxMetadata = unknown> {
 	 *   not found.
 	 */
 	public NextAsync(): Promise<undefined | ViewProfile<T, RobloxMetadata>>;
+
+	private constructor();
 }
 
 export default ProfileVersionQuery;

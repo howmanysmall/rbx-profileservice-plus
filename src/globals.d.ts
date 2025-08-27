@@ -174,6 +174,8 @@ export declare class GlobalUpdates {
 	 * @param updateId - The id of the GlobalUpdate to lock.
 	 */
 	public LockActiveUpdate(updateId: number): void;
+
+	protected constructor();
 }
 
 /** An object containing data about the profile itself. */
@@ -200,8 +202,10 @@ export interface ProfileMetadata {
 	readonly SessionLoadCount: number;
 }
 
-export interface Profile<DataType extends object, RobloxMetadata = unknown>
-	extends ViewProfile<DataType, RobloxMetadata> {
+export declare class Profile<DataType extends object, RobloxMetadata = unknown> extends ViewProfile<
+	DataType,
+	RobloxMetadata
+> {
 	/**
 	 * `Profile.Data` is the primary variable of a Profile object. The developer
 	 * is free to read and write from the table while it is automatically saved
@@ -210,10 +214,10 @@ export interface Profile<DataType extends object, RobloxMetadata = unknown>
 	 * `Profile.Data` will no longer be saved after being released remotely or
 	 * locally via `Profile:Release()`.
 	 */
-	readonly Data: DataType;
+	public readonly Data: DataType;
 
 	/** A table containing data about the profile itself. */
-	readonly Metadata: ProfileMetadata;
+	public readonly Metadata: ProfileMetadata;
 
 	/**
 	 * This signal fires after every auto-save, after
@@ -230,26 +234,26 @@ export interface Profile<DataType extends object, RobloxMetadata = unknown>
 	 * example
 	 * code](https://madstudioroblox.github.io/ProfileService/tutorial/developer_products/).
 	 */
-	readonly MetatagsUpdated: RBXScriptSignal<(metatagsLatest: ProfileMetadata) => void>;
+	public readonly MetatagsUpdated: RBXScriptSignal<(metatagsLatest: ProfileMetadata) => void>;
+
+	protected constructor();
 }
 
-// eslint-disable-next-line ts/no-unnecessary-type-parameters -- don't care
 export declare class ViewProfile<DataType extends object, RobloxMetadata = unknown> {
 	/**
 	 * The primary variable of a Profile object. The developer is free to read
 	 * and write from the table while it is automatically saved to the
 	 * DataStore. `Profile.Data` will no longer be saved after being released
-	 * remotely or locally via `Profile.Release()`.
+	 * remotely or locally via {@linkcode Release}.
 	 */
 	public readonly Data: DataType | undefined;
 
 	/**
 	 * A signal that gets triggered every time `Profile.Data` is updated with a
-	 * new value. This is fired when you call `Profile:Set()` or
-	 * `Profile:SetToPath()`.
+	 * new value. This is fired when you call {@linkcode Set} or
+	 * {@linkcode SetToPath}.
 	 */
-	// eslint-disable-next-line ts/no-unnecessary-type-parameters -- don't care
-	public readonly DataUpdated: RBXScriptSignal<<P extends Paths<DataType>>(path: P) => void>;
+	public readonly DataUpdated: RBXScriptSignal<(path: Paths<DataType>) => void>;
 
 	/**
 	 * This is the GlobalUpdates object tied to this specific Profile. It
@@ -272,7 +276,7 @@ export declare class ViewProfile<DataType extends object, RobloxMetadata = unkno
 	 * [DataStoreKeyInfo](https://developer.roblox.com/en-us/api-reference/class/DataStoreKeyInfo)
 	 * instance reference after every auto-save or profile release.
 	 */
-	public readonly KeyInfoUpdated: RBXScriptSignal<(keyInfo: DataStoreKeyInfo) => void>;
+	public readonly KeyInfoUpdated: RBXScriptSignal<(dataStoreKeyInfo: DataStoreKeyInfo) => void>;
 
 	/** A table containing data about the profile itself. */
 	public readonly Metadata: ProfileMetadata | undefined;
@@ -363,28 +367,33 @@ export declare class ViewProfile<DataType extends object, RobloxMetadata = unkno
 	 * Equivalent of `Profile.Metadata.Metatags.get(tagName)`.
 	 *
 	 * @param tagName - The tag name to retrieve.
-	 * @see `Profile.SetMetatag` for more info.
+	 * @returns The value of the metatag or `undefined` if it doesn't exist.
+	 * @see {@linkcode Profile.SetMetatag} for more info.
 	 */
 	public GetMetatag(tagName: string): unknown;
 
 	/**
 	 * Returns a string containing DataStore name, scope and key; Used for
-	 * debugging;
+	 * debugging.
 	 *
 	 * Example return: `"[Store:"GameData";Scope:"Live";Key:"Player_2312310"]"`.
+	 *
+	 * @returns A string containing the DataStore name, scope, and key.
 	 */
 	public Identify(): string;
 
 	/**
 	 * Returns `true` while the profile is session-locked and saving of changes
-	 * to Profile.Data is guaranteed.
+	 * to {@linkcode Data} is guaranteed.
+	 *
+	 * @returns Whether the profile is active.
 	 */
 	public IsActive(): boolean;
 
 	/**
 	 * In many cases ProfileService will be fast enough when loading and
 	 * releasing profiles as the player teleports between places belonging to
-	 * the same universe / game. However, if you're experiencing noticable
+	 * the same universe / game. However, if you're experiencing noticeable
 	 * delays when loading profiles after a universe teleport, you should try
 	 * implementing `.ListenToHopReady()`.
 	 *
@@ -593,6 +602,7 @@ export declare class ViewProfile<DataType extends object, RobloxMetadata = unkno
 	 * Stores the attribute into the Profile's Data table when the attribute
 	 * changes.
 	 *
+	 * @deprecated I would avoid this function. Attributes are unreliable.
 	 * @param name - The name of the attribute / the key in the Data table.
 	 * @param object - The Instance to store from.
 	 * @returns The RBXScriptConnection for the change event.
@@ -613,6 +623,7 @@ export declare class ViewProfile<DataType extends object, RobloxMetadata = unkno
 	 * Stores the attribute into the Profile's Data table when the attribute
 	 * changes.
 	 *
+	 * @deprecated I would avoid this function. Attributes are unreliable.
 	 * @param path - The path to the object from the data table. This can be a
 	 *   dot separated string or an array of strings.
 	 * @param object - The Instance to store from.
@@ -634,6 +645,7 @@ export declare class ViewProfile<DataType extends object, RobloxMetadata = unkno
 	 * Stores the attribute into the Profile's Data table when the attribute
 	 * changes.
 	 *
+	 * @deprecated I would avoid this function. Attributes are unreliable.
 	 * @param name - The name of the attribute / the key in the Data table.
 	 * @param tableName - The name of the table that contains the attribute.
 	 * @param object - The Instance to store from.
@@ -651,6 +663,8 @@ export declare class ViewProfile<DataType extends object, RobloxMetadata = unkno
 	 * @returns The RBXScriptConnection for the change event.
 	 */
 	public StoreToTableOnValueChange(name: string, tableName: string, valueObject: ValueBase): RBXScriptConnection;
+
+	protected constructor();
 }
 
 export declare class ProfileStore<T extends object, RobloxMetadata = unknown> {
@@ -897,9 +911,9 @@ export declare class ProfileStore<T extends object, RobloxMetadata = unknown> {
 	 *   `min_date` and `max_date` to find the most recent version.
 	 * - Pass `Enum.SortDirection.Descending` for `sort_direction`, `nil` for
 	 *   `min_date` and `DateTime` **defining a time before an event** (e.g. Two
-	 *   days earlier before your game unrightfully stole 1,000,000 rubies from
-	 *   a player) for `max_date` to find the most recent version of a `Profile`
-	 *   that existed before said event.
+	 *   days earlier before your game stole 1,000,000 rubies from a player) for
+	 *   `max_date` to find the most recent version of a `Profile` that existed
+	 *   before said event.
 	 *
 	 * **Case example: "I lost all of my rubies on August 14th!"**.
 	 *
@@ -1071,4 +1085,6 @@ export declare class ProfileStore<T extends object, RobloxMetadata = unknown> {
 	 *   false if it failed.
 	 */
 	public WipeProfileAsync(profileKey: string): Promise<boolean>;
+
+	protected constructor();
 }
