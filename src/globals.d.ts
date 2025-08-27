@@ -68,6 +68,8 @@ export declare class GlobalUpdates {
 	 * Clears a `Locked` update completely from the profile.
 	 *
 	 * Do not call when profile has been released.
+	 *
+	 * @param updateId - Id of an existing locked global update.
 	 */
 	public ClearLockedUpdate(updateId: number): void;
 
@@ -140,14 +142,20 @@ export declare class GlobalUpdates {
 	 * @example
 	 *
 	 * ```ts
-	 * profile.GlobalUpdates.ListenToNewLockedUpdate((updateId, updateData) => {
-	 * 	if (updateData.Type === "AdminGift" && updateData.Item === "Coins") {
-	 * 		profile.Data.Coins += updateData.Amount;
-	 * 	}
-	 * 	profile.GlobalUpdates.ClearLockedUpdate(updateId);
-	 * })
-	 * Must always call `GlobalUpdates.ClearLockedUpdate(updateId)` after processing the locked update.
+	 * profile.GlobalUpdates.ListenToNewLockedUpdate(
+	 * 	(updateId, updateData) => {
+	 * 		if (
+	 * 			updateData.Type === "AdminGift" &&
+	 * 			updateData.Item === "Coins"
+	 * 		)
+	 * 			profile.Data.Coins += updateData.Amount;
+	 * 		profile.GlobalUpdates.ClearLockedUpdate(updateId);
+	 * 	},
+	 * );
 	 * ```
+	 *
+	 * Must always call `GlobalUpdates.ClearLockedUpdate(updateId)` after
+	 * processing the locked update.
 	 *
 	 * @param listener - The listener for new locked updates.
 	 * @returns A connection object that can be used to disconnect the listener.
@@ -587,6 +595,7 @@ export declare class ViewProfile<DataType extends object, RobloxMetadata = unkno
 	 *
 	 * @param name - The name of the attribute / the key in the Data table.
 	 * @param object - The Instance to store from.
+	 * @returns The RBXScriptConnection for the change event.
 	 */
 	public StoreOnAttributeChange(name: string, object: Instance): RBXScriptConnection;
 
@@ -596,6 +605,7 @@ export declare class ViewProfile<DataType extends object, RobloxMetadata = unkno
 	 *
 	 * @param name - The name of the value in the Data table.
 	 * @param valueObject - The ValueObject to store from.
+	 * @returns The RBXScriptConnection for the change event.
 	 */
 	public StoreOnValueChange(name: string, valueObject: ValueBase): RBXScriptConnection;
 
@@ -606,6 +616,7 @@ export declare class ViewProfile<DataType extends object, RobloxMetadata = unkno
 	 * @param path - The path to the object from the data table. This can be a
 	 *   dot separated string or an array of strings.
 	 * @param object - The Instance to store from.
+	 * @returns The RBXScriptConnection for the change event.
 	 */
 	public StoreToPathOnAttributeChange(path: Array<string> | string, object: Instance): RBXScriptConnection;
 
@@ -626,6 +637,7 @@ export declare class ViewProfile<DataType extends object, RobloxMetadata = unkno
 	 * @param name - The name of the attribute / the key in the Data table.
 	 * @param tableName - The name of the table that contains the attribute.
 	 * @param object - The Instance to store from.
+	 * @returns The RBXScriptConnection for the change event.
 	 */
 	public StoreToTableOnAttributeChange(name: string, tableName: string, object: Instance): RBXScriptConnection;
 
@@ -636,6 +648,7 @@ export declare class ViewProfile<DataType extends object, RobloxMetadata = unkno
 	 * @param name - The name of the value in the Data table.
 	 * @param tableName - The name of the table that contains the value.
 	 * @param valueObject - The ValueObject to store from.
+	 * @returns The RBXScriptConnection for the change event.
 	 */
 	public StoreToTableOnValueChange(name: string, tableName: string, valueObject: ValueBase): RBXScriptConnection;
 }
@@ -776,11 +789,16 @@ export declare class ProfileStore<T extends object, RobloxMetadata = unknown> {
 	 * @example
 	 *
 	 * ```ts
-	 * const profile = ProfileStore.LoadProfile("Player_2312310",
-	 * (placeId, gameJobId) => { // placeId and gameJobId identify the Roblox
-	 * server that has // this profile currently locked. In rare cases, if the
-	 * server // crashes, the profile will stay locked until ForceLoaded by // a new session.
-	 * return "Repeat" || "Cancel" || "ForceLoad" || "Steal" })
+	 * const profile = ProfileStore.LoadProfile(
+	 * 	"Player_2312310",
+	 * 	(placeId, gameJobId) => {
+	 * 		// placeId and gameJobId identify the Roblox server that has
+	 * 		// this profile currently locked. In rare cases, if the server
+	 * 		// crashes, the profile will stay locked until ForceLoaded by
+	 * 		// a new session.
+	 * 		return "Repeat" || "Cancel" || "ForceLoad" || "Steal";
+	 * 	},
+	 * );
 	 * ```
 	 *
 	 * @param profileKey - DataStore key.
@@ -800,6 +818,8 @@ export declare class ProfileStore<T extends object, RobloxMetadata = unknown> {
 	 *       session. `"Steal"` can be used to clear dead session locks faster
 	 *       than `"ForceLoad"` assuming your code knows that the session lock
 	 *       is dead.
+	 *
+	 * @returns A {@linkcode Profile} object or `undefined` if not found.
 	 */
 	public LoadProfile(
 		profileKey: string,
@@ -845,6 +865,9 @@ export declare class ProfileStore<T extends object, RobloxMetadata = unknown> {
 	 *       session. `"Steal"` can be used to clear dead session locks faster
 	 *       than `"ForceLoad"` assuming your code knows that the session lock
 	 *       is dead.
+	 *
+	 * @returns A Promise that resolves with either {@linkcode Profile} object or
+	 *   `undefined` if not found.
 	 */
 	public LoadProfileAsync(
 		profileKey: string,
@@ -885,100 +908,102 @@ export declare class ProfileStore<T extends object, RobloxMetadata = unknown> {
 	 * //   ProfileStore that loads player Profiles. It can also just be
 	 * //   the very same ProfileStore object:
 	 *
-	 * const ProfileStore = ProfileStore.GetProfileStore(storeName, template);
+	 * const profileStore = ProfileService.GetProfileStore("Profiles", {});
 	 *
 	 * // If you can't figure out the exact time and timezone the player lost rubies
 	 * //  in on the day of August 14th, then your best bet is to try querying
 	 * //  UTC August 13th. If the first entry still doesn't have the rubies -
 	 * //  try a new query of UTC August 12th and etc.
 	 *
-	 * const maxDate = DateTime.fromUniversalTime(2021, 08, 13) // UTC August 13th, 2021
+	 * // UTC August 13th, 2021
+	 * const maxDate = DateTime.fromUniversalTime(2021, 8, 13);
 	 *
-	 * const query = ProfileStore.ProfileVersionQuery(
-	 *   "Player_2312310", // The same profile key that gets passed to .LoadProfileAsync()
-	 *   Enum.SortDirection.Descending,
-	 *   undefined,
-	 *   maxDate
+	 * const query = profileStore.ProfileVersionQuery(
+	 * 	"Player_2312310", // The same profile key that gets passed to .LoadProfileAsync()
+	 * 	Enum.SortDirection.Descending,
+	 * 	undefined,
+	 * 	maxDate,
 	 * );
 	 *
 	 * // Get the first result in the query:
-	 * const profile = query.NextAsync();
+	 * const profile = query.Next();
 	 *
 	 * if (profile !== undefined) {
-	 * 	profile:ClearGlobalUpdates();
+	 * 	profile.ClearGlobalUpdates();
 	 *
-	 * 	profile:OverwriteAsync(); // This method does the actual rolling back;
-	 * 	  // Don't call this method until you're sure about setting the latest
-	 * 	  // version to a copy of the previous one
-	 *
+	 * 	profile.Overwrite(); // This method does the actual rolling back;
+	 * 	// Don't call this method until you're sure about setting the latest
+	 * 	// version to a copy of the previous one
 	 *
 	 * 	print("Rollback success!");
 	 *
 	 * 	print(profile.Data); // You'll be able to surf table contents if
-	 * 	  // you're running this code in studio with access to API services
-	 * 	  // enabled and have expressive output enabled; If the printed data
-	 * 	  // doesn't have the rubies, you'll want to change your
-	 * 	  // query parameters.
-	 * } else {
-	 * 	print("No version to rollback to");
-	 * }
+	 * 	// you're running this code in studio with access to API services
+	 * 	// enabled and have expressive output enabled; If the printed data
+	 * 	// doesn't have the rubies, you'll want to change your
+	 * 	// query parameters.
+	 * } else print("No version to rollback to");
 	 * ```
 	 *
 	 * ** Case example: Studying data mutation over time**
 	 *
-	 * ```ts
+	 * ```typescript
 	 * // You have ProfileService working in your game. You join
-	 * //  the game with your own account and go to https://www.unixtimestamp.com
-	 * //  and save the current UNIX timestamp resembling present time.
-	 * //  You can then make the game alter your data by giving you
-	 * //  currency, items, experience, etc.
+	 * // the game with your own account and go to https://www.unixtimestamp.com
+	 * // and save the current UNIX timestamp resembling present time.
+	 * // You can then make the game alter your data by giving you
+	 * // currency, items, experience, etc.
 	 *
-	 * const ProfileStore = ProfileStore.GetProfileStore(storeName, template);
+	 * const profileStore = ProfileService.GetProfileStore("StoreName", {});
 	 *
 	 * // UNIX timestamp you saved:
 	 * const minDate = DateTime.fromUnixTimestamp(1628952101);
-	 * const printMinutes = 5; // Print the next 5 minutes of history
+	 * // Print the next 5 minutes of history.
+	 * const printMinutes = 5;
 	 *
-	 * const query = ProfileStore.ProfileVersionQuery(
-	 *   "Player_2312310",
-	 *   Enum.SortDirection.Ascending,
-	 *   minDate
+	 * const query = profileStore.ProfileVersionQuery(
+	 * 	"Player_2312310",
+	 * 	Enum.SortDirection.Ascending,
+	 * 	minDate,
 	 * );
 	 *
 	 * // You can now attempt to print out every snapshot of your data saved
-	 * //  at an average periodic interval of 30 seconds (ProfileService auto-save)
-	 * //  starting from the time you took the UNIX timestamp!
+	 * // at an average periodic interval of 30 seconds (ProfileService auto-save)
+	 * // starting from the time you took the UNIX timestamp!
 	 *
-	 * const finishUpdateTime = minDate.UnixTimestampMillis + (printMinutes * 60000);
-	 *
+	 * const finishUpdateTime =
+	 * 	minDate.UnixTimestampMillis + printMinutes * 60000;
 	 * print("Fetching ", printMinutes, "minutes of saves:");
 	 *
 	 * let entryCount = 0;
 	 * while (true) {
 	 * 	entryCount += 1;
-	 * 	const profile = query.NextAsync();
+	 * 	const profile = query.Next();
 	 * 	if (profile !== undefined) {
 	 * 		if (profile.KeyInfo.UpdatedTime > finishUpdateTime) {
-	 * 			if (entryCount === 1) {
-	 * 				print("No entries found in set time period. (Start timestamp too early)");
-	 * 			} else {
-	 * 				print("Time period finished.");
-	 * 			}
+	 * 			if (entryCount === 1)
+	 * 				print(
+	 * 					"No entries found in set time period. (Start timestamp too early)",
+	 * 				);
+	 * 			else print("Time period finished.");
 	 * 			break;
 	 * 		}
 	 *
 	 * 		print(
-	 * 			"Entry", entryCount, "-",
-	 * 			DateTime.fromUnixTimestampMillis(profile.KeyInfo.UpdatedTime).ToIsoDate();
+	 * 			"Entry",
+	 * 			entryCount,
+	 * 			"-",
+	 * 			DateTime.fromUnixTimestampMillis(
+	 * 				profile.KeyInfo.UpdatedTime,
+	 * 			).ToIsoDate(),
 	 * 		);
-	 *
 	 * 		print(profile.Data); // Printing table for studio expressive output
 	 * 	} else {
-	 * 		if (entryCount === 1) {
-	 * 			print("No entries found in set time period. (Start timestamp too late)");
-	 * 		} else {
-	 * 			print("No more entries in query.");
-	 * 		}
+	 * 		if (entryCount === 1)
+	 * 			print(
+	 * 				"No entries found in set time period. (Start timestamp too late)",
+	 * 			);
+	 * 		else print("No more entries in query.");
 	 * 		break;
 	 * 	}
 	 * }
