@@ -1,16 +1,17 @@
-import type { PathToValue as PathToValueType, Paths as PathsType } from "./advanced-types";
+import type { Paths as PathsType, PathToValue as PathToValueType } from "./advanced-types";
 import type {
 	GlobalUpdateData as GlobalUpdateDataType,
 	GlobalUpdateHandler as GlobalUpdateHandlerType,
 	GlobalUpdates as GlobalUpdatesType,
 	NotReleasedHandler as NotReleasedHandlerType,
+	Profile as ProfileType,
 	ProfileMetadata as ProfileMetadataType,
 	ProfileStore as ProfileStoreType,
-	Profile as ProfileType,
 	ViewProfile as ViewProfileType,
 } from "./globals";
 import type ProfileVersionQueryType from "./profile-version-query";
 
+// eslint-disable-next-line jsdoc/require-returns -- this is a namespace you idiot
 /**
  * ProfileService is a Roblox module that provides a simple API for saving and
  * loading player data.
@@ -20,18 +21,29 @@ import type ProfileVersionQueryType from "./profile-version-query";
 declare namespace ProfileService {
 	/**
 	 * Set to false when the Roblox server is shutting down. `ProfileStore`
-	 * methods should not be called after this value is set to `false`
+	 * methods should not be called after this value is set to `false`.
 	 */
 	export const ServiceLocked: boolean;
 
 	/**
-	 * Analytics endpoint for DataStore error logging. Example usage:
+	 * Analytics endpoint for DataStore error logging.
+	 *
 	 * @example
-	 *	ProfileService.IssueSignal.Connect((errorMessage, profileStoreName, profileKey) => {
-	 *		pcall(() => {
-	 *			AnalyticsService.FireEvent("ProfileServiceIssue", errorMessage, profileStoreName, profileKey)
-	 *	   })
-	 *	})
+	 *
+	 * ```ts
+	 * ProfileService.IssueSignal.Connect(
+	 * 	(errorMessage, profileStoreName, profileKey) => {
+	 * 		pcall(() => {
+	 * 			AnalyticsService.FireEvent(
+	 * 				"ProfileServiceIssue",
+	 * 				errorMessage,
+	 * 				profileStoreName,
+	 * 				profileKey,
+	 * 			);
+	 * 		});
+	 * 	},
+	 * );
+	 * ```
 	 */
 	export const IssueSignal: RBXScriptSignal<
 		(errorMessage: string, profileStoreName: string, profileKey: string) => void
@@ -40,7 +52,7 @@ declare namespace ProfileService {
 	/**
 	 * Analytics endpoint for cases when a DataStore key returns a value that
 	 * has all or some of it's profile components set to invalid data types.
-	 * E.g., accidentally setting Profile.Data to a non table value
+	 * E.g., accidentally setting Profile.Data to a non table value.
 	 */
 	export const CorruptionSignal: RBXScriptSignal<(profileStoreName: string, profileKey: string) => void>;
 
@@ -53,12 +65,15 @@ declare namespace ProfileService {
 	export const CriticalStateSignal: RBXScriptSignal<(isCriticalState: boolean) => void>;
 
 	export const ProfileResult: RBXScriptSignal<(functionName: string, profileTime: number) => void>;
+	// eslint-disable-next-line import/no-mutable-exports -- this is intentional and fine
 	export let FireProfileResult: boolean;
 
 	/**
 	 * `ProfileStore` objects expose methods for loading / viewing profiles and
-	 * sending global updates. Equivalent of [:GetDataStore()](https://developer.roblox.com/en-us/api-reference/function/DataStoreService/GetDataStore)
-	 * in Roblox [DataStoreService](https://developer.roblox.com/en-us/api-reference/class/DataStoreService)
+	 * sending global updates. Equivalent of
+	 * [:GetDataStore()](https://developer.roblox.com/en-us/api-reference/function/DataStoreService/GetDataStore)
+	 * in Roblox
+	 * [DataStoreService](https://developer.roblox.com/en-us/api-reference/class/DataStoreService)
 	 * API.
 	 *
 	 * By default, `profile_template` is only copied for `Profile.Data` for new
@@ -69,23 +84,22 @@ declare namespace ProfileService {
 	 * in `Profile.Data` as soon as it is loaded or have `nil` exceptions in
 	 * your personal `:Get()` and `:Set()` method libraries.
 	 *
-	 * @param profileStoreIndex DataStore name
-	 * @param profileTemplate Profile.Data will default to given table (deep-copy) when no data was saved previously
+	 * @param profileStoreIndex - DataStore name.
+	 * @param profileTemplate - Profile.Data will default to given table
+	 *   (deep-copy) when no data was saved previously.
+	 * @returns A ProfileStore instance for managing profiles in the specified
+	 *   DataStore.
 	 */
 	export function GetProfileStore<ProfileTemplate extends object, RobloxMetadata = unknown>(
 		profileStoreIndex:
+			| string
 			| {
-					/**
-					 * DataStore name
-					 */
+					/** DataStore name. */
 					readonly Name: string;
 
-					/**
-					 * DataStore scope
-					 */
+					/** DataStore scope. */
 					readonly Scope?: string;
-			  }
-			| string,
+			  },
 		profileTemplate: ProfileTemplate,
 	): ProfileStore<ProfileTemplate, RobloxMetadata>;
 
@@ -107,6 +121,9 @@ declare namespace ProfileService {
 
 	/**
 	 * Used to create a path string type.
+	 *
+	 * @template T - The object type to generate paths from.
+	 * @template D - The maximum depth to generate paths for.
 	 */
 	export type Paths<T, D extends number = 10> = PathsType<T, D>;
 	export type PathToValue<V, K extends string> = PathToValueType<V, K>;
