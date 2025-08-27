@@ -47,7 +47,7 @@ type Decrement<N extends number> = N extends 1
 export type IsAccessible<T> = T extends object
 	? T extends Callback
 		? false
-		: // eslint-disable-next-line @typescript-eslint/no-explicit-any
+		: // biome-ignore lint/suspicious/noExplicitAny: necessary evil
 			T extends Array<any>
 			? false
 			: true

@@ -1,4 +1,5 @@
 --!optimize 2
+--!nonstrict
 
 -- local Madwork = _G.Madwork
 --[[
@@ -210,21 +211,21 @@ local Janitor = TS.import(script, TS.getModule(script, "@rbxts", "janitor").src)
 local Promise = TS.Promise
 local Signal = TS.import(script, TS.getModule(script, "@rbxts", "rbx-better-signal").out)
 
-local RepeatCache = {}
-local function StringRep(ToRepeat: string, Amount: number): string
-	local StringCache = RepeatCache[ToRepeat]
-	if not StringCache then
-		StringCache = {}
-		RepeatCache[ToRepeat] = StringCache
+local repeatCache = {}
+local function StringRep(toRepeat: string, amount: number): string
+	local stringCache = repeatCache[toRepeat]
+	if not stringCache then
+		stringCache = {}
+		repeatCache[toRepeat] = stringCache
 	end
 
-	local RepeatString = StringCache[Amount]
-	if not RepeatString then
-		RepeatString = string.rep(ToRepeat, Amount)
-		StringCache[Amount] = RepeatString
+	local repeatString = stringCache[amount]
+	if not repeatString then
+		repeatString = string.rep(toRepeat, amount)
+		stringCache[amount] = repeatString
 	end
 
-	return RepeatString
+	return repeatString
 end
 
 local SETTINGS = {
@@ -718,9 +719,9 @@ local RegisterIssue = ProfileFunctionFenv(
 		warn(
 			"[ProfileServicePlus] DataStore API error "
 				.. IdentifyProfile(store_name, store_scope, profile_key)
-				.. ' - "'
+				.. " - \""
 				.. tostring(error_message)
-				.. '"'
+				.. "\""
 		)
 
 		table.insert(IssueQueue, os.clock()) -- Adding issue time to queue
@@ -2439,9 +2440,9 @@ ProfileStore.LoadProfile = ProfileFunctionFenv(
 								task.wait() -- Overload prevention
 							else
 								error(
-									'[ProfileServicePlus] Invalid return from not_released_handler ("'
+									"[ProfileServicePlus] Invalid return from not_released_handler (\""
 										.. tostring(handler_result)
-										.. '")('
+										.. "\")("
 										.. type(handler_result)
 										.. ");"
 										.. "\n"
@@ -2714,13 +2715,13 @@ function ProfileService.GetProfileStore<T>(profile_store_index: ProfileStoreInde
 
 	-- Type checking:
 	if profile_store_name == nil or type(profile_store_name) ~= "string" then
-		error('[ProfileServicePlus] Missing or invalid "Name" parameter')
+		error("[ProfileServicePlus] Missing or invalid \"Name\" parameter")
 	elseif #profile_store_name == 0 then
 		error("[ProfileServicePlus] ProfileStore name cannot be an empty string")
 	end
 
 	if profile_store_scope ~= nil and (type(profile_store_scope) ~= "string" or #profile_store_scope == 0) then
-		error('[ProfileServicePlus] Invalid "Scope" parameter')
+		error("[ProfileServicePlus] Invalid \"Scope\" parameter")
 	end
 
 	if type(profile_template) ~= "table" then

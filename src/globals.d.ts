@@ -175,15 +175,19 @@ export interface ProfileMetadata {
 	 * currently the owner of this profile; nil if released.
 	 */
 	readonly ActiveSession?: [placeId: number, gameJobId: string];
+
 	/** Saved and auto-saved just like Profile.Data. */
 	readonly Metatags: Map<string, unknown>;
+
 	/**
 	 * The most recent version of Metadata.Metatags which has been saved to the
 	 * DataStore during the last auto-save or `Profile.Save()` call.
 	 */
 	readonly MetatagsLatest: Map<string, unknown>;
+
 	/** `os.time()` timestamp of profile creation. */
 	readonly ProfileCreateTime: number;
+
 	/** Amount of times the profile was loaded. */
 	readonly SessionLoadCount: number;
 }
@@ -726,17 +730,37 @@ export declare class ProfileStore<T extends object, RobloxMetadata = unknown> {
 	 * (approx. 30 seconds), some requests in the queue can be lost after the
 	 * game shuts down.
 	 *
-	 * @example ProfileStore.GlobalUpdateProfile("Player_2312310",
-	 * (globalUpdates) => { globalUpdates.AddActiveUpdate({ Type: "AdminGift",
-	 * Item: "Coins", Amount: 1000, }) })
+	 * @example
+	 *
+	 * ```ts
+	 * ProfileStore.GlobalUpdateProfile(
+	 * 	"Player_2312310",
+	 * 	(globalUpdates) => {
+	 * 		globalUpdates.AddActiveUpdate({
+	 * 			Type: "AdminGift",
+	 * 			Item: "Coins",
+	 * 			Amount: 1000,
+	 * 		});
+	 * 	},
+	 * );
+	 * ```
 	 *
 	 * @param profileKey - DataStore key.
 	 * @param updateHandler - This function is called with a GlobalUpdates
 	 *   object.
-	 * @returns
+	 * @returns A {@linkcode GlobalUpdates} object or `undefined` if not found.
 	 */
 	public GlobalUpdateProfile(profileKey: string, updateHandler: GlobalUpdateHandler): GlobalUpdates | undefined;
 
+	/**
+	 * A non-blocking version of {@linkcode GlobalUpdateProfile}.
+	 *
+	 * @param profileKey - DataStore key.
+	 * @param updateHandler - This function is called with a GlobalUpdates
+	 *   object.
+	 * @returns A promise that resolves with a {@linkcode GlobalUpdates} object
+	 *   or `undefined` if not found.
+	 */
 	public GlobalUpdateProfileAsync(
 		profileKey: string,
 		updateHandler: GlobalUpdateHandler,
@@ -761,20 +785,21 @@ export declare class ProfileStore<T extends object, RobloxMetadata = unknown> {
 	 *
 	 * @param profileKey - DataStore key.
 	 * @param notReleasedHandler - Called when the profile is session-locked by
-	 *   a remote Roblox server. Must return one of the follow values:
+	 *   a remote Roblox server. Must return one of the follow values.
 	 *
-	 *   `"Repeat"` - ProfileService will repeat the profile loading process and
-	 *   may call the release handler again `"Cancel"` - `.LoadProfileAsync()`
-	 *   will immediately return nil `"ForceLoad"` - ProfileService will
-	 *   indefinitely attempt to load the profile. If the profile is
-	 *   session-locked by a remote Roblox server, it will either be released
-	 *   for that remote server or "stolen" (Stealing is necessary for remote
-	 *   servers that are not responding in time and for handling crashed server
-	 *   session-locks). `"Steal"` - The profile will usually be loaded
-	 *   immediately, ignoring an existing remote session lock and applying a
-	 *   session lock for this session. `"Steal"` can be used to clear dead
-	 *   session locks faster than `"ForceLoad"` assuming your code knows that
-	 *   the session lock is dead.
+	 *   - `"Repeat"` - ProfileService will repeat the profile loading process and
+	 *       may call the release handler again
+	 *   - `"Cancel"` - `.LoadProfileAsync()` will immediately return nil
+	 *   - `"ForceLoad"` - ProfileService will indefinitely attempt to load the
+	 *       profile. If the profile is session-locked by a remote Roblox
+	 *       server, it will either be released for that remote server or
+	 *       "stolen" (Stealing is necessary for remote servers that are not
+	 *       responding in time and for handling crashed server session-locks).
+	 *   - `"Steal"` - The profile will usually be loaded immediately, ignoring an
+	 *       existing remote session lock and applying a session lock for this
+	 *       session. `"Steal"` can be used to clear dead session locks faster
+	 *       than `"ForceLoad"` assuming your code knows that the session lock
+	 *       is dead.
 	 */
 	public LoadProfile(
 		profileKey: string,
@@ -807,18 +832,19 @@ export declare class ProfileStore<T extends object, RobloxMetadata = unknown> {
 	 * @param notReleasedHandler - Called when the profile is session-locked by
 	 *   a remote Roblox server. Must return one of the follow values:
 	 *
-	 *   `"Repeat"` - ProfileService will repeat the profile loading process and
-	 *   may call the release handler again `"Cancel"` - `.LoadProfileAsync()`
-	 *   will immediately return nil `"ForceLoad"` - ProfileService will
-	 *   indefinitely attempt to load the profile. If the profile is
-	 *   session-locked by a remote Roblox server, it will either be released
-	 *   for that remote server or "stolen" (Stealing is necessary for remote
-	 *   servers that are not responding in time and for handling crashed server
-	 *   session-locks). `"Steal"` - The profile will usually be loaded
-	 *   immediately, ignoring an existing remote session lock and applying a
-	 *   session lock for this session. `"Steal"` can be used to clear dead
-	 *   session locks faster than `"ForceLoad"` assuming your code knows that
-	 *   the session lock is dead.
+	 *   - `"Repeat"` - ProfileService will repeat the profile loading process and
+	 *       may call the release handler again
+	 *   - `"Cancel"` - `.LoadProfileAsync()` will immediately return nil
+	 *   - `"ForceLoad"` - ProfileService will indefinitely attempt to load the
+	 *       profile. If the profile is session-locked by a remote Roblox
+	 *       server, it will either be released for that remote server or
+	 *       "stolen" (Stealing is necessary for remote servers that are not
+	 *       responding in time and for handling crashed server session-locks).
+	 *   - `"Steal"` - The profile will usually be loaded immediately, ignoring an
+	 *       existing remote session lock and applying a session lock for this
+	 *       session. `"Steal"` can be used to clear dead session locks faster
+	 *       than `"ForceLoad"` assuming your code knows that the session lock
+	 *       is dead.
 	 */
 	public LoadProfileAsync(
 		profileKey: string,
@@ -985,6 +1011,8 @@ export declare class ProfileStore<T extends object, RobloxMetadata = unknown> {
 	 *
 	 * @param profileKey - DataStore key.
 	 * @param version - DataStore key version.
+	 * @returns A profile object or undefined if not found. This one will be
+	 *   view only.
 	 */
 	public ViewProfile(profileKey: string, version?: string): Profile<T, RobloxMetadata> | undefined;
 
@@ -994,6 +1022,8 @@ export declare class ProfileStore<T extends object, RobloxMetadata = unknown> {
 	 * @param profileKey - The key that uniquely identifies the profile in the
 	 *   DataStore.
 	 * @param version - The version of the profile to view.
+	 * @returns A promise that is resolved with profile object or undefined if
+	 *   not found. This one will be view only.
 	 */
 	public ViewProfileAsync(profileKey: string, version?: string): Promise<Profile<T, RobloxMetadata> | undefined>;
 
@@ -1012,7 +1042,8 @@ export declare class ProfileStore<T extends object, RobloxMetadata = unknown> {
 	 * A non-blocking version of {@linkcode WipeProfile}.
 	 *
 	 * @param profileKey - The key to wipe.
-	 * @returns If the wipe was successful or not.
+	 * @returns A promise that resolves to true if the wipe was successful, or
+	 *   false if it failed.
 	 */
 	public WipeProfileAsync(profileKey: string): Promise<boolean>;
 }
