@@ -1,6 +1,5 @@
-type MaxDepth = 10; // This seems to be the best value. Don't go to deep (things your mom says to me)
+type MaxDepth = 10;
 
-// yeah, i'm insane, how did you know?
 type Decrement<N extends number> = N extends 1
 	? 0
 	: N extends 2
@@ -43,35 +42,37 @@ type Decrement<N extends number> = N extends 1
 																				? 19
 																				: never;
 
-// Determine if a type is accessible for recursion
-export type IsAccessible<T> = T extends object
-	? T extends Callback
-		? false
-		: // eslint-disable-next-line @typescript-eslint/no-explicit-any
-			T extends Array<any>
-			? false
-			: true
-	: false;
-
-// Modified Paths<T> with numeric depth control
 export type Paths<T, D extends number = MaxDepth> = [D] extends [never]
 	? never
 	: D extends 0
 		? never
-		: {
-				[K in keyof T]: IsAccessible<T[K]> extends true
-					? K extends string
-						? // @ts-expect-error we gotta do this regardless. i want GOOD TYPES!!!!!!!
-							`${K}.${Paths<T[K], Decrement<D>> & string}` | K
-						: never
-					: K & string;
-			}[keyof T];
+		: T extends ReadonlyArray<unknown>
+			? never
+			: T extends Callback
+				? never
+				: T extends object
+					? {
+							[K in keyof T]: K extends string
+								? T[K] extends ReadonlyArray<unknown>
+									? K
+									: T[K] extends Callback
+										? K
+										: T[K] extends object
+											? `${K}.${Paths<T[K], Decrement<D>>}` | K
+											: K
+								: never;
+						}[keyof T & string]
+					: never;
 
-// Unmodified PathToValue as it doesn't cause recursion issues
-export type PathToValue<V, K extends string> = K extends `${infer A}.${infer B}`
-	? A extends keyof V
-		? PathToValue<V[A], B>
+export type PathToValue<T, P extends string> = P extends `${infer Head}.${infer Tail}`
+	? Head extends keyof T
+		? // biome-ignore lint/suspicious/noExplicitAny: necessary evil
+			T[Head] extends Record<any, infer RV>
+			? RV
+			: T[Head] extends object
+				? PathToValue<T[Head], Tail>
+				: never
 		: never
-	: K extends keyof V
-		? V[K]
+	: P extends keyof T
+		? T[P]
 		: never;
