@@ -1,6 +1,13 @@
 /* eslint-disable max-classes-per-file -- i really don't care */
-import type { Paths, PathToValue } from "./advanced-types";
+import type Signal from "@rbxts/rbx-better-signal";
+
+import type { DeepWritable, Paths, PathToValue } from "./advanced-types";
 import type ProfileVersionQuery from "./profile-version-query";
+import type { ScriptSignal } from "./types";
+
+type CorrectSignal<Signature extends Callback, ConnectOnly extends boolean> = ConnectOnly extends true
+	? ScriptSignal<Signature>
+	: Signal<Signature>;
 
 export type NotReleasedHandler = (placeId: number, gameJobId: string) => "Cancel" | "ForceLoad" | "Repeat" | "Steal";
 
@@ -202,10 +209,11 @@ export interface ProfileMetadata {
 	readonly SessionLoadCount: number;
 }
 
-export declare class Profile<DataType extends object, RobloxMetadata = unknown> extends ViewProfile<
-	DataType,
-	RobloxMetadata
-> {
+export declare class Profile<
+	DataType extends object,
+	RobloxMetadata = unknown,
+	ConnectOnly extends boolean = false,
+> extends ViewProfile<DataType, RobloxMetadata, ConnectOnly> {
 	/**
 	 * `Profile.Data` is the primary variable of a Profile object. The developer
 	 * is free to read and write from the table while it is automatically saved
@@ -234,12 +242,16 @@ export declare class Profile<DataType extends object, RobloxMetadata = unknown> 
 	 * example
 	 * code](https://madstudioroblox.github.io/ProfileService/tutorial/developer_products/).
 	 */
-	public readonly MetatagsUpdated: RBXScriptSignal<(metatagsLatest: ProfileMetadata) => void>;
+	public readonly MetatagsUpdated: CorrectSignal<(metatagsLatest: ProfileMetadata) => void, ConnectOnly>;
 
 	protected constructor();
 }
 
-export declare class ViewProfile<DataType extends object, RobloxMetadata = unknown> {
+export declare class ViewProfile<
+	DataType extends object,
+	RobloxMetadata = unknown,
+	ConnectOnly extends boolean = false,
+> {
 	/**
 	 * The primary variable of a Profile object. The developer is free to read
 	 * and write from the table while it is automatically saved to the
@@ -253,7 +265,7 @@ export declare class ViewProfile<DataType extends object, RobloxMetadata = unkno
 	 * new value. This is fired when you call {@linkcode Set} or
 	 * {@linkcode SetToPath}.
 	 */
-	public readonly DataUpdated: RBXScriptSignal<(path: Paths<DataType>) => void>;
+	public readonly DataUpdated: CorrectSignal<(path: Paths<DataType>) => void, ConnectOnly>;
 
 	/**
 	 * This is the GlobalUpdates object tied to this specific Profile. It
@@ -276,7 +288,7 @@ export declare class ViewProfile<DataType extends object, RobloxMetadata = unkno
 	 * [DataStoreKeyInfo](https://developer.roblox.com/en-us/api-reference/class/DataStoreKeyInfo)
 	 * instance reference after every auto-save or profile release.
 	 */
-	public readonly KeyInfoUpdated: RBXScriptSignal<(dataStoreKeyInfo: DataStoreKeyInfo) => void>;
+	public readonly KeyInfoUpdated: CorrectSignal<(dataStoreKeyInfo: DataStoreKeyInfo) => void, ConnectOnly>;
 
 	/** A table containing data about the profile itself. */
 	public readonly Metadata: ProfileMetadata | undefined;
@@ -331,6 +343,9 @@ export declare class ViewProfile<DataType extends object, RobloxMetadata = unkno
 	 * [Profile:RemoveUserId()](https://madstudioroblox.github.io/ProfileService/api/#profileremoveuserid).
 	 */
 	public readonly UserIds: ReadonlyArray<number>;
+
+	// eslint-disable-next-line camelcase -- loleris L
+	protected _view_mode: boolean;
 
 	/**
 	 * Associates a `UserId` with the profile. Multiple users can be associated
@@ -663,6 +678,9 @@ export declare class ViewProfile<DataType extends object, RobloxMetadata = unkno
 	 * @returns The RBXScriptConnection for the change event.
 	 */
 	public StoreToTableOnValueChange(name: string, tableName: string, valueObject: ValueBase): RBXScriptConnection;
+
+	// biome-ignore lint/suspicious/noConfusingVoidType: I do not care bro
+	public Update(callback: (currentData: DeepWritable<DataType>) => DataType | void): void;
 
 	protected constructor();
 }

@@ -1,6 +1,6 @@
 // @ts-check
 
-import style, { GLOB_JSON, GLOB_JSONC, GLOB_MARKDOWN_CODE } from "@isentinel/eslint-config";
+import style, { GLOB_MARKDOWN_CODE } from "@isentinel/eslint-config";
 
 import perfectionist from "eslint-plugin-perfectionist";
 
@@ -11,7 +11,7 @@ export default style(
 			graphql: true,
 			html: true,
 			lua: false,
-			markdown: true,
+			markdown: false,
 			prettierOptions: {
 				arrowParens: "always",
 				bracketSameLine: false,
@@ -39,16 +39,10 @@ export default style(
 			},
 		},
 		gitignore: true,
-		ignores: [
-			".lune/**",
-			"do-not-sync-ever/**",
-			"./data/**",
-			"**/node_modules/**",
-			"bun/node_modules/**",
-			GLOB_MARKDOWN_CODE,
-		],
+		ignores: [".lune/**", "do-not-sync-ever/**", "./data/**", "**/node_modules/**", GLOB_MARKDOWN_CODE],
 		jsonc: true,
-		markdown: true,
+		jsx: false,
+		markdown: false,
 		perfectionist: {
 			customClassGroups: [],
 		},
@@ -56,14 +50,18 @@ export default style(
 			perfectionist,
 		},
 		pnpm: false,
-		react: true,
-		roblox: false,
+		react: false,
+		roblox: true,
 		rules: {
 			// this is the worst lint config ever made lol
 			"antfu/consistent-list-newline": "off",
 			// this is stupid? and standard?
 			"antfu/no-top-level-await": "off",
 			"arrow-style/arrow-return-style": "off",
+			"better-max-params/better-max-params": ["error", { func: 10 }],
+			"comment-length/limit-multi-line-comments": "error",
+			"comment-length/limit-single-line-comments": "error",
+			"comment-length/limit-tagged-template-literal-comments": "error",
 			curly: "off",
 			"id-length": [
 				"error",
@@ -72,12 +70,13 @@ export default style(
 					max: 45,
 				},
 			],
-			"max-lines-per-function": [
+			"max-lines": [
 				"warn",
 				{
-					max: 70,
+					max: 10000,
 				},
 			],
+			"max-lines-per-function": "off",
 			// makes shit less neat
 			"no-inline-comments": "off",
 			"no-restricted-syntax": "off",
@@ -114,9 +113,9 @@ export default style(
 						"protected-static-method",
 						"private-static-method",
 						"method",
+						"constructor",
 						"protected-method",
 						"private-method",
-						"constructor",
 					],
 					order: "asc",
 				},
@@ -136,11 +135,12 @@ export default style(
 					type: "natural",
 				},
 			],
+			"roblox/no-user-defined-lua-tuple": "off",
 			// some things are just not correct in pascal case unfortunately
 			// "shopify/typescript-prefer-pascal-case-enums": "off",
 			// the most annoying thing known to man
 			"sonar/cognitive-complexity": "off",
-			// I HHATE SONAR SHUT UP!!!!!!!!!!!
+			"sonar/cyclomatic-complexity": ["off", { threshold: 10 }],
 			"sonar/no-commented-code": "off",
 			"sonar/no-nested-incdec": "off",
 			// ugly and makes max-lines-per-function even worse
@@ -159,7 +159,7 @@ export default style(
 			"ts/no-empty-object-type": "off",
 			// sometimes I know shit exists, get over it
 			"ts/no-non-null-assertion": "off",
-			// incorrect!
+			// LUAU MF
 			"ts/no-require-imports": "off",
 			// always wrong
 			"ts/no-unnecessary-condition": "off",
@@ -173,19 +173,29 @@ export default style(
 			"ts/no-unsafe-member-access": "off",
 			// worthless lint. always incorrect.
 			"ts/no-unsafe-return": "off",
+			// "ts/no-unsafe-type-assertion": "error",
 			// this is luau
 			"ts/only-throw-error": "off",
+			// still luau
+			"ts/prefer-promise-reject-errors": "off",
 			// rule conflict
 			"ts/strict-boolean-expressions": "off",
 			// world's most useless rule: does not care if you have a `default:`
 			"ts/switch-exhaustiveness-check": "off",
 			"ts/unbound-method": "off",
 			// no it shouldn't lol
-			"unicorn/catch-error-name": "off",
+			"unicorn/catch-error-name": [
+				"error",
+				{
+					name: "error",
+				},
+			],
 			"unicorn/consistent-destructuring": "off",
 			// this is just outright annoying
 			"unicorn/no-keyword-prefix": "off",
 			"unicorn/no-useless-undefined": ["error", { checkArguments: false, checkArrowFunctionBody: false }],
+			// this piece of shit breaks OTHER apis
+			"unicorn/prefer-single-call": "off",
 			// democracy says goodbye!
 			"unicorn/switch-case-braces": "off",
 		},
@@ -199,7 +209,14 @@ export default style(
 		test: true,
 		toml: false,
 		type: "game",
-		typescript: {},
+		typescript: {
+			parserOptions: {
+				projectService: true,
+				tsconfigRootDir: import.meta.dirname,
+			},
+			tsconfigPath: "./tsconfig.json",
+			typeAware: true,
+		},
 		yaml: {
 			overrides: {
 				"yaml/indent": "error",
@@ -219,5 +236,4 @@ export default style(
 			"shopify/prefer-class-properties": "off",
 		},
 	},
-
 );

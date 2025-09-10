@@ -205,12 +205,21 @@
 
 local DataStoreService = game:GetService("DataStoreService")
 local RunService = game:GetService("RunService")
+local FastSpawn = require(script:FindFirstChild("FastSpawn"))
+local ProfileUpdate = require(script:FindFirstChild("profile-update"))
+local SafeFastSpawn = require(script:FindFirstChild("SafeFastSpawn"))
 
 -- selene: allow(global_usage)
 local TS = _G[script]
 local Janitor = TS.import(script, TS.getModule(script, "@rbxts", "janitor").src).Janitor
 local Promise = TS.Promise
 local Signal = TS.import(script, TS.getModule(script, "@rbxts", "rbx-better-signal").out)
+
+export type UpdateResult = {
+	Changed: boolean,
+	Count: number,
+	Paths: {string},
+}
 
 local repeatCache = {}
 local function StringRep(toRepeat: string, amount: number): string
@@ -615,7 +624,7 @@ local function IdentifyProfile(store_name, store_scope, key)
 	return string.format(
 		"[Store:%q;%*Key:%q]",
 		store_name,
-		store_scope ~= nil and string.format("Scope:%q;", store_scope) or "",
+		if store_scope ~= nil then string.format("Scope:%q;", store_scope) else "",
 		key
 	)
 end
@@ -623,7 +632,7 @@ end
 local CustomWriteQueueCleanup = ProfileFunctionFenv("CustomWriteQueueCleanup", function(store, key)
 	if CustomWriteQueue[store] ~= nil then
 		CustomWriteQueue[store][key] = nil
-		if next(CustomWriteQueue[store]) == nil then
+		if (next(CustomWriteQueue[store])) == nil then
 			CustomWriteQueue[store] = nil
 		end
 	end
@@ -643,7 +652,7 @@ local CustomWriteQueueMarkForCleanup = ProfileFunctionFenv("CustomWriteQueueMark
 					end
 				end)
 			end
-		elseif next(CustomWriteQueue[store]) == nil then
+		elseif (next(CustomWriteQueue[store])) == nil then
 			CustomWriteQueue[store] = nil
 		end
 	end
@@ -679,17 +688,17 @@ local CustomWriteQueueAsync = ProfileFunctionFenv(
 		if os.clock() - queue_data.LastWrite > SETTINGS.RobloxWriteCooldown and #queue == 0 then
 			queue_data.LastWrite = os.clock()
 			return callback()
-		else
-			table.insert(queue, callback)
-			while true do
-				if os.clock() - queue_data.LastWrite > SETTINGS.RobloxWriteCooldown and queue[1] == callback then
-					table.remove(queue, 1)
-					queue_data.LastWrite = os.clock()
-					return callback()
-				end
+		end
 
-				task.wait()
+		table.insert(queue, callback)
+		while true do
+			if os.clock() - queue_data.LastWrite > SETTINGS.RobloxWriteCooldown and queue[1] == callback then
+				table.remove(queue, 1)
+				queue_data.LastWrite = os.clock()
+				return callback()
 			end
+
+			task.wait()
 		end
 	end
 )
@@ -1752,58 +1761,102 @@ function Profile:StoreToPathOnAttributeChange(Path: string | {string}, Object: I
 	end), "Disconnect")
 end
 
-function Profile:Set(Key: string, Value: any)
-	self.Data[Key] = Value
-	self.DataUpdated:Fire(Key, Value)
+function Profile:Set(key: string, value: any): ()
+	local data = self.Data
+	if data[key] == value then
+		return
+	end
+
+	data[key] = value
+	self.DataUpdated:FireBindableUnsafe(key, value)
 end
 
-function Profile:RawSet(Key: string, Value: any)
-	self.Data[Key] = Value
+function Profile:RawSet(key: string, value: any): ()
+	self.Data[key] = value
 end
 
-function Profile:SetToPath(Path: string | {string}, Value: any)
-	local PathArray = if type(Path) == "string" then string.split(Path, ".") else Path
-	local NewName = table.concat(PathArray, ".")
-	local Key = table.remove(PathArray)
+function Profile:SetToPath(path: string | {string}, value: any): ()
+	local pathArray = if type(path) == "string" then string.split(path, ".") else path
+	local newName = table.concat(pathArray, ".")
+	local key = table.remove(pathArray)
 
-	local DataTable = self.Data
-	for _, PathValue in PathArray do
-		local NewDataTable = DataTable[PathValue]
-		if not NewDataTable or type(NewDataTable) ~= "table" then
-			error(string.format("[ProfileServicePlus] There is no table with the path %q", NewName))
+	local object = self.Data
+	for _, pathValue in pathArray do
+		local newObject = object[pathValue]
+		if not newObject then
+			error(string.format("[ProfileServicePlus] There is nothing at the path %q", newName))
+		end
+		if type(newObject) ~= "table" then
+			error(
+				string.format(
+					"[ProfileServicePlus] The item at the path %q is not a table, it is a %*",
+					newName,
+					typeof(newObject)
+				)
+			)
+		end
+		object = newObject
+	end
+
+	if not object then
+		error(string.format("[ProfileServicePlus] There is nothing at the path %q", newName))
+	end
+	if type(object) ~= "table" then
+		error(
+			string.format(
+				"[ProfileServicePlus] The item at the path %q is not a table, it is a %*",
+				newName,
+				typeof(object)
+			)
+		)
+	end
+
+	if object[key] == value then
+		return
+	end
+
+	object[key] = value
+	self.DataUpdated:FireBindableUnsafe(newName, value)
+end
+
+function Profile:RawSetToPath(path: string | {string}, value: any): ()
+	local pathArray = if type(path) == "string" then string.split(path, ".") else path
+	local newName = table.concat(pathArray, ".")
+	local key = table.remove(pathArray)
+
+	local object = self.Data
+	for _, pathValue in pathArray do
+		local newObject = object[pathValue]
+		if not newObject then
+			error(string.format("[ProfileServicePlus] There is nothing at the path %q", newName))
+		end
+		if type(newObject) ~= "table" then
+			error(
+				string.format(
+					"[ProfileServicePlus] The item at the path %q is not a table, it is a %*",
+					newName,
+					typeof(newObject)
+				)
+			)
 		end
 
-		DataTable = NewDataTable
+		object = newObject
 	end
 
-	if not DataTable or type(DataTable) ~= "table" then
-		error(string.format("[ProfileServicePlus] There is no table with the path %q", NewName))
+	if not object then
+		error(string.format("[ProfileServicePlus] There is nothing at the path %q", newName))
+	end
+	if type(object) ~= "table" then
+		error(
+			string.format(
+				"[ProfileServicePlus] The item at the path %q is not a table, it is a %*",
+				newName,
+				typeof(object)
+			)
+		)
 	end
 
-	DataTable[Key] = Value
-	self.DataUpdated:Fire(NewName, Value)
-end
-
-function Profile:RawSetToPath(Path: string | {string}, Value: any)
-	local PathArray = if type(Path) == "string" then string.split(Path, ".") else Path
-	local NewName = table.concat(PathArray, ".")
-	local Key = table.remove(PathArray)
-
-	local DataTable = self.Data
-	for _, PathValue in PathArray do
-		local NewDataTable = DataTable[PathValue]
-		if not NewDataTable or type(NewDataTable) ~= "table" then
-			error(string.format("[ProfileServicePlus] There is no table with the path %q", NewName))
-		end
-
-		DataTable = NewDataTable
-	end
-
-	if not DataTable or type(DataTable) ~= "table" then
-		error(string.format("[ProfileServicePlus] There is no table with the path %q", NewName))
-	end
-
-	DataTable[Key] = Value
+	object[key] = value
 end
 
 function Profile:ListenToRelease(listener) --> [ScriptConnection] (place_id / nil, game_job_id / nil)
@@ -1827,9 +1880,9 @@ function Profile:ListenToRelease(listener) --> [ScriptConnection] (place_id / ni
 
 		listener(place_id, game_job_id)
 		return {Disconnect = function() end}
-	else
-		return self._janitor:Add(self._release_listeners:Connect(listener), "Disconnect")
 	end
+
+	return self._janitor:Add(self._release_listeners:Connect(listener), "Disconnect")
 end
 
 Profile.Save = ProfileFunctionFenv("Profile.Save", function(self)
@@ -1855,7 +1908,7 @@ Profile.Save = ProfileFunctionFenv("Profile.Save", function(self)
 		RemoveProfileFromAutoSave(self)
 		AddProfileToAutoSave(self)
 		-- Call save function in a new thread:
-		task.spawn(CallFunction, SaveProfileAsync, self)
+		FastSpawn(CallFunction, SaveProfileAsync, self)
 	end
 end)
 
@@ -1877,17 +1930,22 @@ function Profile:SaveAsync()
 
 	-- Reject save request if a save is already pending in the queue - this will prevent the user from
 	--	unecessary API request spam which we could not meaningfully execute anyways!
-	return Promise.new(function(Resolve, Reject)
+	return Promise.new(function(resolve, reject)
 		if IsCustomWriteQueueEmptyFor(self._profile_store._profile_store_lookup, self._profile_key) == true then
 			-- We don't want auto save to trigger too soon after manual saving - this will reset the auto save timer:
 			RemoveProfileFromAutoSave(self)
 			AddProfileToAutoSave(self)
 			-- Call save function in a new thread:
-			local Success, Value = SaveProfileAsync(self);
-			(if Success then Resolve else Reject)(Value)
+			local success, value = SaveProfileAsync(self)
+			if success then
+				resolve(value)
+			else
+				reject(value)
+			end
+
 			-- task.spawn(SaveProfileAsync, self)
 		else
-			Resolve()
+			resolve()
 		end
 	end)
 end
@@ -1898,7 +1956,7 @@ function Profile:Release()
 	end
 
 	if self:IsActive() == true then
-		task.spawn(CallFunction, SaveProfileAsync, self, true) -- Call save function in a new thread with release_from_session = true
+		FastSpawn(CallFunction, SaveProfileAsync, self, true) -- Call save function in a new thread with release_from_session = true
 	end
 end
 
@@ -1912,11 +1970,11 @@ function Profile:ListenToHopReady(listener) --> [ScriptConnection] ()
 	end
 
 	if self._hop_ready == true then
-		task.spawn(listener)
+		FastSpawn(listener)
 		return {Disconnect = function() end}
-	else
-		return self._janitor:Add(self._hop_ready_listeners:Connect(listener), "Disconnect")
 	end
+
+	return self._janitor:Add(self._hop_ready_listeners:Connect(listener), "Disconnect")
 end
 
 function Profile:AddUserId(user_id: number) -- Associates user_id with profile (GDPR compliance)
@@ -1987,6 +2045,23 @@ function Profile:Overwrite() -- Saves the profile to the DataStore and removes t
 end
 
 Profile.OverwriteAsync = Promise.promisify(Profile.Overwrite)
+
+function Profile:Update<T>(callback: (profileData: T) -> T?): UpdateResult
+	if type(callback) ~= "function" then
+		error("[ProfileServicePlus] Update callback must be a function")
+	end
+
+	if self._view_mode == true then
+		error("[ProfileServicePlus] Cannot update profile in view mode")
+	end
+
+	if not self:IsActive() then
+		error("[ProfileServicePlus] Cannot update inactive profile")
+	end
+
+	return ProfileUpdate(self, callback)
+end
+
 function Profile:Destroy()
 	self.DataUpdated:Destroy()
 	self._janitor:Destroy()
@@ -2021,7 +2096,7 @@ ProfileVersionQuery.__index = ProfileVersionQuery
 function ProfileVersionQuery:_MoveQueue()
 	while #self._query_queue > 0 do
 		local queue_entry = table.remove(self._query_queue, 1)
-		task.spawn(queue_entry)
+		SafeFastSpawn(queue_entry)
 		if self._is_query_yielded == true then
 			break
 		end
@@ -2046,7 +2121,7 @@ function ProfileVersionQuery:Next(_is_stacking) --> [Profile] or nil
 
 		if self._query_pages == nil then
 			self._is_query_yielded = true
-			task.spawn(function()
+			FastSpawn(function()
 				profile = self:Next(true)
 				is_finished = true
 			end)
@@ -2087,7 +2162,7 @@ function ProfileVersionQuery:Next(_is_stacking) --> [Profile] or nil
 
 		if next_item == nil then
 			self._is_query_yielded = true
-			task.spawn(function()
+			FastSpawn(function()
 				profile = self:Next(true)
 				is_finished = true
 			end)
@@ -2796,7 +2871,7 @@ function ProfileService.GetProfileStore<T>(profile_store_index: ProfileStoreInde
 
 	if IsLiveCheckActive == true then
 		self._is_pending = true
-		task.spawn(function()
+		FastSpawn(function()
 			WaitForLiveAccessCheck()
 			if UseMockDataStore == false then
 				self._global_data_store = DataStoreService:GetDataStore(profile_store_name, profile_store_scope)
@@ -2822,7 +2897,7 @@ end
 
 if IsStudio == true then
 	IsLiveCheckActive = true
-	task.spawn(function()
+	FastSpawn(function()
 		local status, message = pcall(function()
 			-- This will error if current instance has no Studio API access:
 			DataStoreService:GetDataStore("____PS"):SetAsync("____PS", os.time())
@@ -2891,7 +2966,7 @@ RunService.Heartbeat:Connect(function()
 
 			-- Perform save call:
 			if profile ~= nil then
-				task.spawn(CallFunction, SaveProfileAsync, profile) -- Auto save profile in new thread
+				FastSpawn(CallFunction, SaveProfileAsync, profile) -- Auto save profile in new thread
 			end
 		end
 	end
@@ -2929,7 +3004,7 @@ RunService.Heartbeat:Connect(function()
 end)
 
 -- Release all loaded profiles when the server is shutting down:
-task.spawn(function()
+FastSpawn(function()
 	WaitForLiveAccessCheck()
 	Madwork.ConnectToOnClose(function()
 		ProfileService.ServiceLocked = true
@@ -2946,7 +3021,7 @@ task.spawn(function()
 		for _, profile in active_profiles do
 			if profile:IsActive() == true then
 				on_close_save_job_count += 1
-				task.spawn(function() -- Save profile on new thread
+				FastSpawn(function() -- Save profile on new thread
 					SaveProfileAsync(profile, true)
 					on_close_save_job_count -= 1
 				end)

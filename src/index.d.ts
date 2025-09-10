@@ -1,4 +1,6 @@
-import type { Paths as PathsType, PathToValue as PathToValueType } from "./advanced-types";
+import type { ScriptSignal } from "types/types";
+
+import type { Paths as PathsType, PathToValue as PathToValueType } from "./types/advanced-types";
 import type {
 	GlobalUpdateData as GlobalUpdateDataType,
 	GlobalUpdateHandler as GlobalUpdateHandlerType,
@@ -8,8 +10,8 @@ import type {
 	ProfileMetadata as ProfileMetadataType,
 	ProfileStore as ProfileStoreType,
 	ViewProfile as ViewProfileType,
-} from "./globals";
-import type ProfileVersionQueryType from "./profile-version-query";
+} from "./types/globals";
+import type ProfileVersionQueryType from "./types/profile-version-query";
 
 // eslint-disable-next-line jsdoc/require-returns -- this is a namespace you idiot
 /**
@@ -45,7 +47,7 @@ declare namespace ProfileService {
 	 * );
 	 * ```
 	 */
-	export const IssueSignal: RBXScriptSignal<
+	export const IssueSignal: ScriptSignal<
 		(errorMessage: string, profileStoreName: string, profileKey: string) => void
 	>;
 
@@ -54,7 +56,7 @@ declare namespace ProfileService {
 	 * has all or some of it's profile components set to invalid data types.
 	 * E.g., accidentally setting Profile.Data to a non table value.
 	 */
-	export const CorruptionSignal: RBXScriptSignal<(profileStoreName: string, profileKey: string) => void>;
+	export const CorruptionSignal: ScriptSignal<(profileStoreName: string, profileKey: string) => void>;
 
 	/**
 	 * Analytics endpoint for cases when DataStore is throwing too many errors
@@ -62,9 +64,9 @@ declare namespace ProfileService {
 	 * be due to developer errors or due to Roblox server problems. Could be
 	 * used to alert players about data store outages.
 	 */
-	export const CriticalStateSignal: RBXScriptSignal<(isCriticalState: boolean) => void>;
+	export const CriticalStateSignal: ScriptSignal<(isCriticalState: boolean) => void>;
 
-	export const ProfileResult: RBXScriptSignal<(functionName: string, profileTime: number) => void>;
+	export const ProfileResult: ScriptSignal<(functionName: string, profileTime: number) => void>;
 	// eslint-disable-next-line import/no-mutable-exports -- this is intentional and fine
 	export let FireProfileResult: boolean;
 
@@ -112,10 +114,15 @@ declare namespace ProfileService {
 	export type GlobalUpdateHandler = GlobalUpdateHandlerType;
 	export type GlobalUpdates = GlobalUpdatesType;
 	export type ProfileMetadata = ProfileMetadataType;
-	export type Profile<DataType extends object, RobloxMetadata = unknown> = ProfileType<DataType, RobloxMetadata>;
+	export type Profile<DataType extends object, RobloxMetadata = unknown> = ProfileType<
+		DataType,
+		RobloxMetadata,
+		true
+	>;
 	export type ViewProfile<DataType extends object, RobloxMetadata = unknown> = ViewProfileType<
 		DataType,
-		RobloxMetadata
+		RobloxMetadata,
+		true
 	>;
 	export type ProfileStore<T extends object, RobloxMetadata = unknown> = ProfileStoreType<T, RobloxMetadata>;
 
