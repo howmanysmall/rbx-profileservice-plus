@@ -509,6 +509,16 @@ export declare class ViewProfile<
 	public RawSetToPath<P extends Paths<DataType>>(path: P, value: PathToValue<DataType, P>): void;
 
 	/**
+	 * Similar to {@linkcode Update}, except does not fire the
+	 * `Profile.DataUpdated` event.
+	 *
+	 * @param callback - The callback function that receives the current data
+	 *   and returns the new data or void.
+	 */
+	// biome-ignore lint/suspicious/noConfusingVoidType: I do not care bro
+	public RawUpdate(callback: (currentData: DeepWritable<DataType>) => DataType | void): void;
+
+	/**
 	 * Fills in missing variables inside `Profile.Data` from `profileTemplate`
 	 * table that was provided when calling `ProfileService.GetProfileStore()`.
 	 * It's often necessary to use `.Reconcile()` if you're applying changes to
@@ -679,6 +689,20 @@ export declare class ViewProfile<
 	 */
 	public StoreToTableOnValueChange(name: string, tableName: string, valueObject: ValueBase): RBXScriptConnection;
 
+	/**
+	 * Behaves in a similar way to what {@linkcode DataStore.UpdateAsync} would
+	 * do. The `callback` function is called immediately with the current value
+	 * of `Profile.Data` and is expected to return the new value of
+	 * `Profile.Data` or `void` to leave it unchanged. If the `callback`
+	 * function errors, the update is aborted and will be retried during the
+	 * next auto-update cycle.
+	 *
+	 * This method will fire the `Profile.DataUpdated` event if the data was
+	 * changed.
+	 *
+	 * @param callback - The callback function that receives the current data
+	 *   and returns the new data or void.
+	 */
 	// biome-ignore lint/suspicious/noConfusingVoidType: I do not care bro
 	public Update(callback: (currentData: DeepWritable<DataType>) => DataType | void): void;
 

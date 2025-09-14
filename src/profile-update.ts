@@ -9,6 +9,7 @@ import type { UpdateResult } from "types/types";
 function profileUpdate<DataType extends object>(
 	profile: Writable<Profile<DataType>>,
 	callback: (profileData: DataType) => void,
+	skipUpdate = false,
 ): UpdateResult<DataType> {
 	const dataBefore = Differ.copyDeepWithCircularCheck(profile.Data, undefined);
 	const [success, exception] = pcall(() => noYield(callback, profile.Data));
@@ -25,7 +26,7 @@ function profileUpdate<DataType extends object>(
 	Differ.diffTables(dataBefore, profile.Data, "", changesSet, 0);
 
 	const [paths, count] = Differ.buildPathArray(changesSet);
-	if (count > 0) {
+	if (!skipUpdate && count > 0) {
 		const dataUpdated = profile.DataUpdated;
 		for (const path of paths) dataUpdated.FireBindableUnsafe(path);
 	}

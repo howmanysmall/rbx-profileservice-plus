@@ -2059,7 +2059,23 @@ function Profile:Update<T>(callback: (profileData: T) -> T?): UpdateResult
 		error("[ProfileServicePlus] Cannot update inactive profile")
 	end
 
-	return ProfileUpdate(self, callback)
+	return ProfileUpdate(self, callback, false)
+end
+
+function Profile:RawUpdate<T>(callback: (profileData: T) -> T?): UpdateResult
+	if type(callback) ~= "function" then
+		error("[ProfileServicePlus] Update callback must be a function")
+	end
+
+	if self._view_mode == true then
+		error("[ProfileServicePlus] Cannot update profile in view mode")
+	end
+
+	if not self:IsActive() then
+		error("[ProfileServicePlus] Cannot update inactive profile")
+	end
+
+	return ProfileUpdate(self, callback, true)
 end
 
 function Profile:Destroy()
