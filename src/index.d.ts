@@ -6,14 +6,13 @@ import type {
 	GlobalUpdateHandler as GlobalUpdateHandlerType,
 	GlobalUpdates as GlobalUpdatesType,
 	NotReleasedHandler as NotReleasedHandlerType,
-	Profile as ProfileType,
 	ProfileMetadata as ProfileMetadataType,
 	ProfileStore as ProfileStoreType,
+	Profile as ProfileType,
 	ViewProfile as ViewProfileType,
 } from "./types/globals";
 import type ProfileVersionQueryType from "./types/profile-version-query";
 
-// eslint-disable-next-line jsdoc/require-returns -- this is a namespace you idiot
 /**
  * ProfileService is a Roblox module that provides a simple API for saving and
  * loading player data.

@@ -90,18 +90,11 @@ namespace Differ {
 			const previousIsTable = typeIs(previousValue, "table");
 			const newIsTable = typeIs(newValue, "table");
 
-			if (previousIsTable && newIsTable) {
-				diffTables(previousValue, newValue, currentPath, changesSet, depth + 1);
-			} else if (previousValue !== newValue) {
-				changesSet.add(currentPath);
-			}
+			if (previousIsTable && newIsTable) diffTables(previousValue, newValue, currentPath, changesSet, depth + 1);
+			else if (previousValue !== newValue) changesSet.add(currentPath);
 		}
 
-		for (const [key] of previousData as AnyMap) {
-			if (!localSeenKeys.has(key)) {
-				changesSet.add(buildPath(path, key));
-			}
-		}
+		for (const [key] of previousData as AnyMap) if (!localSeenKeys.has(key)) changesSet.add(buildPath(path, key));
 		return changesSet;
 	}
 

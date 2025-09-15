@@ -198,6 +198,7 @@ export default style(
 			"unicorn/prefer-single-call": "off",
 			// democracy says goodbye!
 			"unicorn/switch-case-braces": "off",
+			"no-throw-literal": "off"
 		},
 		spellCheck: false,
 		stylistic: {

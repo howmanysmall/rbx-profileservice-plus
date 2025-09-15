@@ -1,10 +1,11 @@
 //!native
 //!optimize 2
 
-import Differ from "differ";
-import noYield from "no-yield";
 import type { Profile } from "types/globals";
 import type { UpdateResult } from "types/types";
+
+const Differ = require(script.Parent!.WaitForChild("differ") as ModuleScript) as typeof import("differ");
+const noYield = require(script.Parent!.WaitForChild("no-yield") as ModuleScript) as typeof import("no-yield");
 
 function profileUpdate<DataType extends object>(
 	profile: Writable<Profile<DataType>>,
