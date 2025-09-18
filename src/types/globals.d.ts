@@ -1,7 +1,7 @@
 /* eslint-disable max-classes-per-file -- i really don't care */
 import type Signal from "@rbxts/rbx-better-signal";
 
-import type { DeepWritable, Paths, PathToValue } from "./advanced-types";
+import type { DeepReadonly, DeepWritable, Paths, PathToValue } from "./advanced-types";
 import type ProfileVersionQuery from "./profile-version-query";
 import type { ScriptSignal } from "./types";
 
@@ -222,7 +222,7 @@ export declare class Profile<
 	 * `Profile.Data` will no longer be saved after being released remotely or
 	 * locally via `Profile:Release()`.
 	 */
-	public readonly Data: DataType;
+	public readonly Data: DeepReadonly<DataType>;
 
 	/** A table containing data about the profile itself. */
 	public readonly Metadata: ProfileMetadata;
@@ -258,7 +258,7 @@ export declare class ViewProfile<
 	 * DataStore. `Profile.Data` will no longer be saved after being released
 	 * remotely or locally via {@linkcode Release}.
 	 */
-	public readonly Data: DataType | undefined;
+	public readonly Data: DeepReadonly<DataType> | undefined;
 
 	/**
 	 * A signal that gets triggered every time `Profile.Data` is updated with a

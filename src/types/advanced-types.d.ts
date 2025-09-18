@@ -152,3 +152,14 @@ export type PathToValue<T, P extends string> = P extends `${infer Head}.${infer 
 export type DeepWritable<T> = {
 	-readonly [P in keyof T]: T[P] extends object ? DeepWritable<T[P]> : T[P];
 };
+
+export type DeepReadonly<T> =
+	T extends Map<infer K, infer V>
+		? ReadonlyMap<DeepReadonly<K>, DeepReadonly<V>>
+		: T extends Set<infer U>
+			? ReadonlySet<DeepReadonly<U>>
+			: T extends Array<infer U>
+				? ReadonlyArray<DeepReadonly<U>>
+				: T extends object
+					? { readonly [P in keyof T]: DeepReadonly<T[P]> }
+					: T;
